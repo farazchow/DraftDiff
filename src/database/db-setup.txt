@@ -1,0 +1,34 @@
+`CREATE TABLE users(
+    user_id INTEGER PRIMARY KEY, 
+    discord_display_name TEXT,
+    riot_id TEXT,
+    current_points INTEGER
+);`
+
+`CREATE TABLE game_match(
+    match_id SERIAL PRIMARY KEY,
+    users_playing INTEGER[],
+    did_win boolean,
+    started timestamp,
+    ended timestamp,
+    predictions INTEGER[]
+);`
+
+`CREATE TABLE predictions(
+    prediction_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users,
+    match_id INTEGER REFERENCES game_match,
+    amount_bet INTEGER,
+    predicted_win boolean,
+    correct_prediction boolean,
+    amount_earned INTEGER
+);`
+
+`CREATE TABLE transactions(
+    transaction_id SERIAL PRIMARY KEY,
+    sender INTEGER REFERENCES users,
+    receiver INTEGER REFERENCES users,
+    amount INTEGER,
+    note TEXT,
+    created timestamp
+);`

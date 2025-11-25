@@ -1,0 +1,40 @@
+{
+  "name": "discordbettingbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup src/index.ts --minify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "body-parser": "^2.2.0",
+    "discord.js": "^14.25.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mongodb": "^7.0.0",
+    "mongoose": "^9.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "jiti": "^2.6.1",
+    "nodemon": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.47.0"
+  }
+}
