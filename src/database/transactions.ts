@@ -1,23 +1,25 @@
 import mongoose from "mongoose";
 
-const transactionsSchema = new mongoose.Schema({
+const transactionsSchema = new mongoose.Schema(
+  {
     sender: {
-        type: Number,
-        ref: "Users"
+      type: Number,
+      ref: "Users",
     },
     receiver: {
-        type: Number,
-        ref: "Users",
-        required: true
+      type: Number,
+      ref: "Users",
     },
     amount: {
-        type: Number,
-        required: true
+      type: Number,
+      required: true,
     },
     note: String,
-}, {
-    timestamps: true
-});
+  },
+  {
+    timestamps: true,
+  }
+);
 
 const transactionsModel = mongoose.model("Transactions", transactionsSchema);
 export default transactionsModel;

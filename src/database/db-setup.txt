@@ -32,3 +32,9 @@
     note TEXT,
     created timestamp
 );`
+
+TODO:
+Post in Server when Game is started, with a bet button
+Take in bet amounts
+Add points to user for sitting in call
+Every time a new bet is added, update the message to show the new odds
