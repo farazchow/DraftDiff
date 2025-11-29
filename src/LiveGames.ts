@@ -2,6 +2,25 @@ import { getLiveGame, getFinishedGame } from "./RiotFunctions";
 import predictionsModel from "./database/predictions";
 import gameMatchModel from "./database/game_matches";
 import { TransferPoints } from "./database/dbFunctions";
+import {
+  ActionRowBuilder,
+  BaseMessageOptions,
+  ButtonBuilder,
+  ButtonInteraction,
+  ButtonStyle,
+  LabelBuilder,
+  Message,
+  MessageFlags,
+  ModalBuilder,
+  ModalSubmitInteraction,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  userMention,
+} from "discord.js";
+import { EditMessage, SendMessage } from "./discord-functions/SendMessage";
+import userModel from "./database/users";
 
 const POLLING_RATE = 15 * 1000;
 
@@ -15,6 +34,8 @@ export class LiveGame {
   riotIds: number[];
   discordUsers: number[];
   intervalID: NodeJS.Timeout | undefined;
+  message: Message | undefined;
+  unixTimeStamp: string;
 
   constructor(gameId: number, bettingTimeInMinutes: number = 5) {
     this.gameId = gameId;
@@ -22,7 +43,12 @@ export class LiveGame {
     this.betting = true;
     this.riotIds = [];
     this.discordUsers = [];
-    this.timeOutID = setTimeout(() => {
+    this.unixTimeStamp = (
+      Math.floor(Date.now() / 1000) +
+      bettingTimeInMinutes * 60
+    ).toString();
+
+    this.timeOutID = setTimeout(async () => {
       this.betting = false;
       this.intervalID = setInterval(() => {
         this.ResolveGame();
@@ -34,6 +60,7 @@ export class LiveGame {
     if (this.betting) {
       this.bets.push(new Bets(userID, predicted_win, pointsBet));
       TransferPoints(userID, undefined, pointsBet, `Bet on NA_${this.gameId}`);
+      this.SendBetMessage();
     } else {
       console.error(`Betting window for game ${this.gameId} is closed.`);
     }
@@ -135,6 +162,145 @@ export class LiveGame {
     }
     return [winAmount, lossAmount];
   }
+
+  // Construct Discord Message for this game
+  async SendBetMessage() {
+    const [winAmount, lossAmount] = this.GetBetTotals();
+    const button = new ButtonBuilder()
+      .setCustomId(this.gameId.toString())
+      .setLabel("Bet on this game!")
+      .setStyle(ButtonStyle.Primary);
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+    // Get name of user
+    const competitors = [];
+    for (const id of this.discordUsers) {
+      competitors.push(userMention(id.toString()));
+    }
+    const text = `
+    ${competitors.join(" ,")} have begun a ranked game and betting is now open!
+    ${winAmount + lossAmount} is currently riding on this game. \n
+    There is 🟦 ${winAmount} 🟦 betting on a win, 
+    and 🟥 ${lossAmount} 🟥 betting on a loss! \n
+    Betting closes in <t:${this.unixTimeStamp}:R>. 
+    `;
+
+    const messageContent: BaseMessageOptions = {
+      content: text,
+      components: [row],
+    };
+
+    if (this.message === undefined) {
+      this.message = await SendMessage(messageContent);
+    } else {
+      await EditMessage(this.message, messageContent);
+    }
+  }
+
+  // Handles user pressing the bet option
+  async HandleBetButton(interaction: ButtonInteraction) {
+    // Betting is closed
+    if (!this.betting) {
+      interaction.reply({
+        content: "Betting Closed!",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+    const userID = Number(interaction.user.id);
+    if (this.discordUsers.includes(userID)) {
+      interaction.reply({
+        content: "Woah, you aren't allowed to bet on your own games!",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    // Check if user is registered
+    const user = await userModel.findById(userID);
+    if (user === null) {
+      interaction.reply({
+        content: `Woah, you aren't registered with DraftDiff yet. 
+          Do /register to get started, then try again.
+          `,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId(this.gameId.toString())
+      .setTitle("DraftDiff Bookie");
+
+    const amountInput = new TextInputBuilder()
+      .setCustomId("betAmount")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setValue("0")
+      .setMaxLength(10);
+
+    const amountLabel = new LabelBuilder()
+      .setLabel(
+        `You currently have ${user.currentPoints} points. How much do you want to wager?`
+      )
+      .setTextInputComponent(amountInput);
+
+    const betTypeSelector = new StringSelectMenuBuilder()
+      .setCustomId("betType")
+      .setRequired(true)
+      .setMaxValues(1)
+      .addOptions(
+        new StringSelectMenuOptionBuilder().setLabel("Bet Win").setValue("win"),
+        new StringSelectMenuOptionBuilder()
+          .setLabel("Bet Loss")
+          .setValue("loss")
+      );
+    const betTypeLabel = new LabelBuilder()
+      .setLabel("Bet Win or Bet Loss")
+      .setStringSelectMenuComponent(betTypeSelector);
+    modal.addLabelComponents(betTypeLabel, amountLabel);
+
+    await interaction.showModal(modal);
+  }
+
+  // Handles user submitting a bet
+  async HandleBetModalSubmit(interaction: ModalSubmitInteraction) {
+    if (!this.betting) {
+      interaction.reply({
+        content: "Took too long and betting has closed!",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+    const userID = Number(interaction.user.id);
+    const user = await userModel.findById(userID);
+
+    const amountBet = Number(interaction.fields.getTextInputValue("betAmount"));
+    const betType =
+      interaction.fields.getStringSelectValues("betType")[0] == "win";
+
+    // Input a non number amount
+    if (isNaN(amountBet)) {
+      interaction.reply({
+        content: "Invalid Bet Placed. Try again later.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    // Tried to bet more points than they currently have
+    if (amountBet > (user?.currentPoints ?? 0)) {
+      interaction.reply({
+        content:
+          "You tried to bet more than you currently have. Try again later.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    // Good to add the bet!
+    this.AddBet(userID, betType, amountBet);
+  }
 }
 
 export class Bets {
@@ -147,4 +313,20 @@ export class Bets {
     this.predictedWin = predicted_win;
     this.pointsBet = points_bet;
   }
+}
+
+export function FindLiveGame(gameId: string | number): LiveGame | null {
+  let id = 0;
+  if (typeof gameId === "string") {
+    id = Number(gameId);
+  } else {
+    id = gameId;
+  }
+
+  for (const game of LiveGames) {
+    if (game.gameId === id) {
+      return game;
+    }
+  }
+  return null;
 }

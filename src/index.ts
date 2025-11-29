@@ -11,11 +11,8 @@ import { commands } from "./commands/commands";
 import { config } from "./config";
 import mongoose from "mongoose";
 import { CreateGame } from "./createGame";
-import { LiveGames } from "./LiveGames";
-import {
-  HandleTestButton,
-  SendTestMessage,
-} from "./test-functions/test-message";
+import { FindLiveGame, LiveGames } from "./LiveGames";
+import { CheckVoice } from "./discord-functions/VoiceWatcher";
 
 const WAITBEFOREPOLL = 10 * 1000;
 
@@ -37,8 +34,11 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildVoiceStates,
   ],
 });
+
+export let mainChannel: Channel | undefined = undefined;
 
 // Deploy commands when client is ready
 client.once(Events.ClientReady, async (readyClient) => {
@@ -52,7 +52,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     channel = await client.channels.fetch(config.CHANNEL_ID);
   }
   if (channel?.isSendable()) {
-    await SendTestMessage(channel);
+    mainChannel = channel;
   }
 });
 
@@ -72,7 +72,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
     }
   } else if (interaction.isButton()) {
-    HandleTestButton(interaction);
+    const game = FindLiveGame(interaction.customId);
+    if (game === null) {
+      interaction.reply({
+        content: "Sorry, couldn't find this game.",
+        flags: MessageFlags.Ephemeral,
+      });
+    } else {
+      game.HandleBetButton(interaction);
+    }
+  } else if (interaction.isModalSubmit()) {
+    const game = FindLiveGame(interaction.customId);
+    if (game === null) {
+      interaction.reply({
+        content: "Sorry, couldn't find this game.",
+        flags: MessageFlags.Ephemeral,
+      });
+    } else {
+      game.HandleBetModalSubmit(interaction);
+    }
   }
 });
 
@@ -111,16 +129,12 @@ client.on(Events.PresenceUpdate, async (oldPresence, newPresence) => {
       () => CreateGame(Number(newPresence.user?.id)),
       WAITBEFOREPOLL
     );
-    let channel: Channel | undefined | null = client.channels.cache.get(
-      config.CHANNEL_ID
-    );
-    if (channel === undefined) {
-      channel = await client.channels.fetch(config.CHANNEL_ID);
-    }
-    if (channel?.isSendable()) {
-      channel.send(`${newPresence.user?.displayName} is now in a ranked game.`);
-    }
   }
+});
+
+// Discord User has entered/left voice chats
+client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+  CheckVoice(oldState, newState);
 });
 
 client.login(process.env.DISCORD_TOKEN);

@@ -11,12 +11,14 @@ export async function TransferPoints(
     const senderUser = await userModel.findById(sender);
     if (senderUser && senderUser.currentPoints >= amount) {
       senderUser.currentPoints = senderUser.currentPoints - amount;
+      senderUser.save();
     }
   }
   if (receiver) {
     const receiverUser = await userModel.findById(receiver);
     if (receiverUser) {
       receiverUser.currentPoints = receiverUser.currentPoints + amount;
+      receiverUser.save();
     }
   }
   transactionsModel.create({
@@ -24,5 +26,6 @@ export async function TransferPoints(
     receiver: receiver,
     amount: amount,
     note: note,
+    time: new Date(),
   });
 }
