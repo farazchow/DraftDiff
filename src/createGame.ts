@@ -4,6 +4,7 @@ import { LiveGames, LiveGame } from "./LiveGames";
 import { getLiveGame } from "./RiotFunctions";
 
 const PAYFORPLAYAMOUNT = 25;
+const gamesProcessing: Set<number> = new Set();
 
 export async function CreateGame(userID: number) {
   const registeredUser = await userModel.findById(userID);
@@ -22,6 +23,11 @@ export async function CreateGame(userID: number) {
     try {
       const currentGameInfo = await getLiveGame(id);
       if (currentGameInfo) {
+        // we are already processing this game
+        if (gamesProcessing.has(currentGameInfo.gameId)) {
+          return;
+        }
+        gamesProcessing.add(currentGameInfo.gameId);
         const newLiveGame = new LiveGame(currentGameInfo.gameId);
         for (const participant of currentGameInfo.participants) {
           const p = await userModel.findOne({ riotIds: participant.puuid });
@@ -40,7 +46,8 @@ export async function CreateGame(userID: number) {
           _id: currentGameInfo.gameId,
           usersPlaying: newLiveGame.discordUsers,
         });
-        break;
+        gamesProcessing.delete(currentGameInfo.gameId);
+        return;
       }
     } catch (error) {
       console.error("Problem while creating bet: ", error);

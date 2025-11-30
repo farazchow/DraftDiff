@@ -15,6 +15,7 @@ import {
   ModalSubmitInteraction,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
+  TextDisplayBuilder,
   TextInputBuilder,
   TextInputStyle,
   userMention,
@@ -75,9 +76,12 @@ export class LiveGame {
         return false;
       }
 
+      // Wait a few seconds to really make sure riot api is caught up
+      await setTimeout(() => {}, 1000 * 5);
+
       // Game has finished
       const finishedGame = await getFinishedGame(
-        "NA_" + this.gameId.toString()
+        "NA1_" + this.gameId.toString()
       );
       if (finishedGame) {
         // Find result
@@ -178,10 +182,10 @@ export class LiveGame {
       competitors.push(userMention(id.toString()));
     }
     const text = `
-    ${competitors.join(" ,")} have begun a ranked game and betting is now open!
-    ${winAmount + lossAmount} is currently riding on this game. \n
-    There is 🟦 ${winAmount} 🟦 betting on a win, 
-    and 🟥 ${lossAmount} 🟥 betting on a loss! \n
+    ${competitors} have begun a ranked game and betting is now open! There are ${
+      winAmount + lossAmount
+    } points currently riding on this game. \n
+    There is 🟦 ${winAmount} 🟦 betting on a win, and 🟥 ${lossAmount} 🟥 betting on a loss! \n
     Betting closes in <t:${this.unixTimeStamp}:R>. 
     `;
 
@@ -239,10 +243,11 @@ export class LiveGame {
       .setValue("0")
       .setMaxLength(10);
 
+    const text = new TextDisplayBuilder().setContent(
+      `You currently have ${user.currentPoints} points. How much do you want to wager?`
+    );
     const amountLabel = new LabelBuilder()
-      .setLabel(
-        `You currently have ${user.currentPoints} points. How much do you want to wager?`
-      )
+      .setLabel(`How many points do you want to bet?`)
       .setTextInputComponent(amountInput);
 
     const betTypeSelector = new StringSelectMenuBuilder()
@@ -258,7 +263,9 @@ export class LiveGame {
     const betTypeLabel = new LabelBuilder()
       .setLabel("Bet Win or Bet Loss")
       .setStringSelectMenuComponent(betTypeSelector);
-    modal.addLabelComponents(betTypeLabel, amountLabel);
+    modal
+      .addLabelComponents(betTypeLabel, amountLabel)
+      .addTextDisplayComponents(text);
 
     await interaction.showModal(modal);
   }

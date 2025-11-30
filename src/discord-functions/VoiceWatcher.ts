@@ -3,7 +3,7 @@ import userModel from "../database/users";
 import { TransferPoints } from "../database/dbFunctions";
 
 const REWARDTIME = 1000 * 60 * 15;
-const REWARDAMOUNT = 1;
+const REWARDAMOUNT = 50;
 const usersInVoice: Map<string, number> = new Map();
 
 export async function CheckVoice(old: VoiceState, current: VoiceState) {

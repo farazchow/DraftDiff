@@ -11,6 +11,7 @@ import {
   StringSelectMenuOptionBuilder,
   TextInputBuilder,
   TextInputStyle,
+  userMention,
 } from "discord.js";
 import { mainChannel } from "..";
 export { mainChannel } from "../index";
@@ -22,7 +23,9 @@ export async function SendTestMessage() {
     console.error("Main Channel not defined");
     return;
   }
-  const textMessage = `Testing message <t:${timeStamp}:R>`;
+  const textMessage = `Testing message ${userMention(
+    "209143873245675520"
+  )} <t:${timeStamp}:R>`;
   const testButton = new ButtonBuilder()
     .setCustomId(timeStamp.toString())
     .setLabel("Test")

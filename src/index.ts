@@ -100,7 +100,8 @@ client.on(Events.PresenceUpdate, async (oldPresence, newPresence) => {
     throw new Error("New Presence not given?");
   }
   const newActivities: Activity[] = newPresence.activities.filter(
-    (act) => act.details === "Summoner's Rift (Ranked)"
+    // (act) => act.details === "Summoner's Rift (Ranked)"
+    (act) => act.details === "Howling Abyss (ARAM)"
   );
 
   if (newActivities.length !== 0 && newActivities[0].state === "In Game") {
