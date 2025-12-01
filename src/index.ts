@@ -13,6 +13,7 @@ import mongoose from "mongoose";
 import { CreateGame } from "./createGame";
 import { FindLiveGame, LiveGames } from "./LiveGames";
 import { CheckVoice } from "./discord-functions/VoiceWatcher";
+import { SendMessage } from "./discord-functions/SendMessage";
 
 const WAITBEFOREPOLL = 10 * 1000;
 
@@ -54,6 +55,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   if (channel?.isSendable()) {
     mainChannel = channel;
   }
+  SendMessage({content: "DraftDiff is back online! Let the gambling begin! 🤑"});
 });
 
 // User interaction
