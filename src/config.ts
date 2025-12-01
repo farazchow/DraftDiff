@@ -1,6 +1,11 @@
 import dotenv from "dotenv";
+import path from 'path';
 
-dotenv.config();
+const env = process.env.NODE_ENV || 'development';
+const envPath = path.resolve(process.cwd(), `.env${env === 'development' ? '' : '.' + env}`);
+
+console.log(`Starting in ${env} mode.`);
+dotenv.config({path: envPath});
 
 const {
   DISCORD_TOKEN,
