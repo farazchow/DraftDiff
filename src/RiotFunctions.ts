@@ -19,7 +19,7 @@ export async function getLiveGame(puuid: string) {
 export async function getFinishedGame(matchId: string) {
   try {
     const response = await axios.get(
-      `https://americas.api.riotgames.com/lol/match/v5/matches/${matchId}`,
+      `https://americas.api.riotgames.com/lol/match/v5/matches/NA1_${matchId}`,
       {
         headers: { "X-Riot-Token": config.RIOT_API_KEY },
       }

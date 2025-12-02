@@ -22,7 +22,7 @@ export async function deployCommands({guildId} : DeployCommandsProp) {
         );
         console.log("Successfully reloaded applications (/) commands.");
     } catch (error) {
-        console.error(error);
+        throw new Error(error!.toString());
     }
 }
 

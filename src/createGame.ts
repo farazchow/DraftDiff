@@ -3,10 +3,9 @@ import gameMatchModel from "./database/game_matches";
 import { LiveGames, LiveGame } from "./LiveGames";
 import { getLiveGame } from "./RiotFunctions";
 
-const PAYFORPLAYAMOUNT = 25;
 const gamesProcessing: Set<number> = new Set();
 
-export async function CreateGame(userID: number) {
+export async function CreateGame(userID: number, bettingTimeInMinutes:number = 5) {
   const registeredUser = await userModel.findById(userID);
   if (!registeredUser) {
     console.log("User is not registered.");
@@ -27,22 +26,22 @@ export async function CreateGame(userID: number) {
         if (gamesProcessing.has(currentGameInfo.gameId)) {
           return;
         }
+
         gamesProcessing.add(currentGameInfo.gameId);
-        const newLiveGame = new LiveGame(currentGameInfo.gameId);
+        const newLiveGame = new LiveGame(currentGameInfo.gameId, bettingTimeInMinutes);
         for (const participant of currentGameInfo.participants) {
           const p = await userModel.findOne({ riotIds: participant.puuid });
           if (p) {
-            const pointsPayed = Math.min(PAYFORPLAYAMOUNT, p.currentPoints);
-            newLiveGame.AddBet(p._id, true, pointsPayed);
             newLiveGame.discordUsers.push(p._id);
             newLiveGame.riotIds.push(participant.puuid);
           }
         }
 
+        // Add to our current list of live games.
         LiveGames.push(newLiveGame);
 
         // Create DB object for match
-        gameMatchModel.create({
+        await gameMatchModel.create({
           _id: currentGameInfo.gameId,
           usersPlaying: newLiveGame.discordUsers,
         });

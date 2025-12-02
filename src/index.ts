@@ -14,6 +14,7 @@ import { CreateGame } from "./createGame";
 import { FindLiveGame, LiveGames } from "./LiveGames";
 import { CheckVoice } from "./discord-functions/VoiceWatcher";
 import { SendMessage } from "./discord-functions/SendMessage";
+import userModel from "./database/users";
 
 const WAITBEFOREPOLL = 10 * 1000;
 
@@ -40,6 +41,8 @@ const client = new Client({
 });
 
 export let mainChannel: Channel | undefined = undefined;
+
+let cooldown = false;
 
 // Deploy commands when client is ready
 client.once(Events.ClientReady, async (readyClient) => {
@@ -102,8 +105,8 @@ client.on(Events.PresenceUpdate, async (oldPresence, newPresence) => {
     throw new Error("New Presence not given?");
   }
   const newActivities: Activity[] = newPresence.activities.filter(
-    // (act) => act.details === "Summoner's Rift (Ranked)"
-    (act) => act.details === "Howling Abyss (ARAM)"
+    (act) => act.details === "Summoner's Rift (Ranked)"
+    // (act) => act.details === "Howling Abyss (ARAM)"
   );
 
   if (newActivities.length !== 0 && newActivities[0].state === "In Game") {
@@ -125,6 +128,20 @@ client.on(Events.PresenceUpdate, async (oldPresence, newPresence) => {
       ).length !== 0
     ) {
       return;
+    }
+
+    // Check to see if we have that user's riot id
+    const user = await userModel.findById(Number(newPresence.userId));
+    if (!user || user.riotIds.length === 0) {
+      return;
+    }
+
+    // small cooldown to avoid race conditions for now
+    if (cooldown) {
+      return;
+    } else {
+      cooldown = true;
+      setTimeout(() => cooldown = false, 5000);
     }
 
     // Create the Game

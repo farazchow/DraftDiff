@@ -13,11 +13,7 @@ export async function execute(interaction: CommandInteraction) {
   );
   if (user) {
     interaction.reply(
-      `${interaction.user.displayName} has ${
-        user.currentPoints
-      } coins, and their daily reward is ${
-        dailyRewardAvailable ? "" : "not"
-      } available.`
+      `${interaction.user.displayName} has ${user.currentPoints} coins, and their daily reward is ${dailyRewardAvailable ? "" : "not "}available.`
     );
   } else {
     interaction.reply(

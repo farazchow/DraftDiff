@@ -18,7 +18,6 @@ import {
   TextDisplayBuilder,
   TextInputBuilder,
   TextInputStyle,
-  userMention,
 } from "discord.js";
 import { EditMessage, SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
@@ -29,21 +28,20 @@ export const LiveGames: LiveGame[] = [];
 
 export class LiveGame {
   gameId: number;
-  bets: Bets[];
+  riotIds: string[] = [];
+  discordUsers: number[] = [];
+
   betting: boolean;
+  unixTimeStamp: string;
+  bets: Bets[] = [];
   timeOutID: NodeJS.Timeout;
-  riotIds: number[];
-  discordUsers: number[];
+
   intervalID: NodeJS.Timeout | undefined;
   message: Message | undefined;
-  unixTimeStamp: string;
 
   constructor(gameId: number, bettingTimeInMinutes: number = 5) {
     this.gameId = gameId;
-    this.bets = [];
     this.betting = true;
-    this.riotIds = [];
-    this.discordUsers = [];
     this.unixTimeStamp = (
       Math.floor(Date.now() / 1000) +
       bettingTimeInMinutes * 60
@@ -55,13 +53,15 @@ export class LiveGame {
         this.ResolveGame();
       }, POLLING_RATE);
     }, bettingTimeInMinutes * 60 * 1000);
+
+    this.SendBetMessage();
   }
 
-  AddBet(userID: number, predicted_win: boolean, pointsBet: number) {
+  async AddBet(userID: number, predicted_win: boolean, pointsBet: number) {
     if (this.betting) {
       this.bets.push(new Bets(userID, predicted_win, pointsBet));
-      TransferPoints(userID, undefined, pointsBet, `Bet on NA_${this.gameId}`);
-      this.SendBetMessage();
+      TransferPoints(userID, undefined, pointsBet, `Bet on NA1_${this.gameId}`);
+      await this.SendBetMessage();
     } else {
       console.error(`Betting window for game ${this.gameId} is closed.`);
     }
@@ -76,29 +76,22 @@ export class LiveGame {
         return false;
       }
 
-      // Wait a few seconds to really make sure riot api is caught up
-      await setTimeout(() => {}, 1000 * 5);
-
       // Game has finished
-      const finishedGame = await getFinishedGame(
-        "NA1_" + this.gameId.toString()
-      );
+      const finishedGame = await getFinishedGame(this.gameId.toString());
       if (finishedGame) {
         // Find result
         let result = "Loss";
-        if (finishedGame.info.gameDuration < 5 * 60 * 1000) {
-          // Remake
-          result = "Remake";
-        } else {
-          const participantDTOs = finishedGame.info.participants.filter(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (p: any) => this.riotIds.includes(p.uuid)
-          );
-          if (participantDTOs && participantDTOs[0].win) {
-            result = "Win";
-          }
+        result = finishedGame.info.gameDuration < 5 * 60 ? "Remake" : result;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const participantDTOs = (finishedGame.info.participants as Array<any>).filter((p: any) => this.riotIds.includes(p.puuid));
+        if (!participantDTOs || participantDTOs.length !== this.riotIds.length) {
+          console.error(finishedGame.info.participants);
+          console.error(participantDTOs);
+          console.error(participantDTOs.length, this.riotIds.length);
+          console.error(`No eligible participants found: NA1_${this.gameId}`);
+          return false;
         }
-
+        result = participantDTOs[0].win ? "Win" : result;
         // Resolve Bets
         const [winAmount, lossAmount] = this.GetBetTotals();
 
@@ -118,7 +111,7 @@ export class LiveGame {
           // Create Prediction
           predictionsModel.create({
             userId: bet.userID,
-            matchId: "NA_" + this.gameId.toString(),
+            matchId: "NA1_" + this.gameId.toString(),
             amountBet: bet.pointsBet,
             prediction: predicted,
             outcome: result,
@@ -135,6 +128,14 @@ export class LiveGame {
             );
           }
         }
+        
+        if (result === "Win") {
+          for (const id of this.discordUsers) {
+            const user = await userModel.findById(id);
+            user!.currentPoints = user!.currentPoints + 25;
+            user?.save();
+          }
+        }
 
         // Update GameModel
         const thisGame = await gameMatchModel.findById(this.gameId);
@@ -146,8 +147,12 @@ export class LiveGame {
         LiveGames.filter((game) => game.gameId !== this.gameId);
         // Stop the check for this game
         clearInterval(this.intervalID);
+        SendMessage({
+          content: `NA1_${this.gameId} is over! The result was a ${result}.`
+        });
       } else {
-        throw new Error("Game was both not live, nor finished");
+        console.error("Game was both not live, nor finished: NA1_", this.gameId);
+        return false;
       }
     }
     return true;
@@ -179,12 +184,10 @@ export class LiveGame {
     // Get name of user
     const competitors = [];
     for (const id of this.discordUsers) {
-      competitors.push(userMention(id.toString()));
+      const user = await userModel.findById(id)
+      competitors.push(user?.discordName);
     }
-    const text = `
-    ${competitors} have begun a ranked game and betting is now open! There are ${
-      winAmount + lossAmount
-    } points currently riding on this game. \n
+    const text = `${competitors.toString()} begun a ranked game and betting is now open! There are ${winAmount + lossAmount} points currently riding on this game. \n
     There is 🟦 ${winAmount} 🟦 betting on a win, and 🟥 ${lossAmount} 🟥 betting on a loss! \n
     Betting closes in <t:${this.unixTimeStamp}:R>. 
     `;
@@ -272,41 +275,42 @@ export class LiveGame {
 
   // Handles user submitting a bet
   async HandleBetModalSubmit(interaction: ModalSubmitInteraction) {
+    await interaction.deferReply({flags: MessageFlags.Ephemeral});
     if (!this.betting) {
-      interaction.reply({
+      interaction.followUp({
         content: "Took too long and betting has closed!",
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
     const userID = Number(interaction.user.id);
     const user = await userModel.findById(userID);
 
-    const amountBet = Number(interaction.fields.getTextInputValue("betAmount"));
+    const amountBet = Math.floor(Number(interaction.fields.getTextInputValue("betAmount")));
     const betType =
       interaction.fields.getStringSelectValues("betType")[0] == "win";
 
     // Input a non number amount
     if (isNaN(amountBet)) {
-      interaction.reply({
+      interaction.followUp({
         content: "Invalid Bet Placed. Try again later.",
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
 
     // Tried to bet more points than they currently have
-    if (amountBet > (user?.currentPoints ?? 0)) {
-      interaction.reply({
+    if (amountBet > (user?.currentPoints ?? 0) || amountBet < 0) {
+      interaction.followUp({
         content:
           "You tried to bet more than you currently have. Try again later.",
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
 
     // Good to add the bet!
     this.AddBet(userID, betType, amountBet);
+    interaction.followUp({
+      content: "Thank you for betting!"
+    });
   }
 }
 

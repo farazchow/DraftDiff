@@ -7,7 +7,7 @@ export async function SendMessage(
   if (mainChannel && mainChannel.isSendable()) {
     return await mainChannel.send(content);
   } else {
-    throw new Error("Main Channel not sent");
+    throw new Error("Main Channel not set");
   }
 }
 

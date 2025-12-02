@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, MessageFlags } from "discord.js";
 import userModel from "../database/users";
 
 export const data = new SlashCommandBuilder()
@@ -10,6 +10,15 @@ export async function execute(interaction: CommandInteraction) {
   const discordName = interaction.user.username;
   const yesterday = new Date().setDate(new Date().getDate() - 1);
   try {
+    const user = await userModel.findById(userID);
+    if (user) {
+      interaction.reply({
+        content: "Stupid fucking idiot, you are already registered.",
+        flags: MessageFlags.Ephemeral
+      });
+      return;
+    }
+
     await userModel.create({
       _id: userID,
       discordName: discordName,
