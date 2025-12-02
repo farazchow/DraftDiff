@@ -15,7 +15,6 @@ List of things I still need to implement / maybe will implement:
 - Find a way to host this all not on my laptop.
 
 # Current Bugs
-- Not properly detecting when game is over. Error is on the participantsDTO line.
-- Bet Message double sending
+- Bet Message double sending when I am the one playing
 - Race condition when multiple people start a game at the same time
 - Change daily reward to be a timeout polling instead of waiting for them to leave vc
