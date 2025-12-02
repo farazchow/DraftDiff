@@ -17,4 +17,3 @@ List of things I still need to implement / maybe will implement:
 # Current Bugs
 - Bet Message double sending when I am the one playing
 - Race condition when multiple people start a game at the same time
-- Change daily reward to be a timeout polling instead of waiting for them to leave vc
