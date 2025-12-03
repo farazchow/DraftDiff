@@ -24,7 +24,7 @@ import userModel from "./database/users";
 
 const POLLING_RATE = 15 * 1000;
 
-export const LiveGames: LiveGame[] = [];
+export let LiveGames: LiveGame[] = [];
 
 export class LiveGame {
   gameId: number;
@@ -140,7 +140,7 @@ export class LiveGame {
           thisGame.save();
         }
         // Remove the Game from the Lives Game List
-        LiveGames.filter((game) => game.gameId !== this.gameId);
+        LiveGames = LiveGames.filter((game) => game.gameId !== this.gameId);
         // Stop the check for this game
         clearInterval(this.intervalID);
         ReplyTo(this.message!, {

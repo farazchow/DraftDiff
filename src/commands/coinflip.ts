@@ -79,4 +79,5 @@ export async function execute(interaction: CommandInteraction) {
   cooldown = true;
   setTimeout(() => cooldown = false, COOLDOWN_TIME * 60 * 1000);
   timestamp.setMinutes((new Date()).getMinutes() + COOLDOWN_TIME);
+  console.log("Cooldown over at:", timestamp);
 }
