@@ -19,7 +19,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from "discord.js";
-import { EditMessage, SendMessage } from "./discord-functions/SendMessage";
+import { EditMessage, ReplyTo, SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
 
 const POLLING_RATE = 15 * 1000;
@@ -53,8 +53,6 @@ export class LiveGame {
         this.ResolveGame();
       }, POLLING_RATE);
     }, bettingTimeInMinutes * 60 * 1000);
-
-    this.SendBetMessage();
   }
 
   async AddBet(userID: number, predicted_win: boolean, pointsBet: number) {
@@ -131,9 +129,7 @@ export class LiveGame {
         
         if (result === "Win") {
           for (const id of this.discordUsers) {
-            const user = await userModel.findById(id);
-            user!.currentPoints = user!.currentPoints + 25;
-            user?.save();
+            TransferPoints(undefined, id, 25, "Nice Win!");
           }
         }
 
@@ -147,7 +143,7 @@ export class LiveGame {
         LiveGames.filter((game) => game.gameId !== this.gameId);
         // Stop the check for this game
         clearInterval(this.intervalID);
-        SendMessage({
+        ReplyTo(this.message!, {
           content: `NA1_${this.gameId} is over! The result was a ${result}.`
         });
       } else {
@@ -298,7 +294,7 @@ export class LiveGame {
     }
 
     // Tried to bet more points than they currently have
-    if (amountBet > (user?.currentPoints ?? 0) || amountBet < 0) {
+    if (amountBet > (user?.currentPoints ?? 0) || amountBet <= 0) {
       interaction.followUp({
         content:
           "You tried to bet more than you currently have. Try again later.",

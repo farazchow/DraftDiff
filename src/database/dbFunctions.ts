@@ -1,3 +1,5 @@
+import gameMatchModel from "./game_matches";
+import predictionsModel from "./predictions";
 import transactionsModel from "./transactions";
 import userModel from "./users";
 
@@ -28,4 +30,18 @@ export async function TransferPoints(
     note: note,
     time: new Date(),
   });
+}
+
+export async function ResetDB() {
+  try {
+    await userModel.updateMany(
+      {},
+      { $set: {currentPoints: 100}}
+    );
+    await transactionsModel.deleteMany({});
+    await gameMatchModel.deleteMany({});
+    await predictionsModel.deleteMany({});
+  } catch (error) {
+    console.error(error);
+  }
 }

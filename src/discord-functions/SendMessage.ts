@@ -1,4 +1,4 @@
-import { Message, MessageCreateOptions, MessageEditOptions } from "discord.js";
+import { Message, MessageCreateOptions, MessageEditOptions, MessageReplyOptions } from "discord.js";
 import { mainChannel } from "../index";
 
 export async function SendMessage(
@@ -13,4 +13,8 @@ export async function SendMessage(
 
 export async function EditMessage(msg: Message, content: MessageEditOptions) {
   msg.edit(content);
+}
+
+export async function ReplyTo(msg: Message, content: MessageReplyOptions) {
+  msg.reply(content);
 }

@@ -15,6 +15,7 @@ import { FindLiveGame, LiveGames } from "./LiveGames";
 import { CheckVoice } from "./discord-functions/VoiceWatcher";
 import { SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
+import { ResetDB } from "./database/dbFunctions";
 
 const WAITBEFOREPOLL = 10 * 1000;
 
@@ -59,6 +60,8 @@ client.once(Events.ClientReady, async (readyClient) => {
     mainChannel = channel;
   }
   SendMessage({content: "DraftDiff is back online! Let the gambling begin! 🤑"});
+  await ResetDB();
+  console.log("Resetting DB");
 });
 
 // User interaction

@@ -24,6 +24,7 @@ export async function CreateGame(userID: number, bettingTimeInMinutes:number = 5
       if (currentGameInfo) {
         // we are already processing this game
         if (gamesProcessing.has(currentGameInfo.gameId)) {
+          console.log(`Already Processing : NA1_${currentGameInfo.gameId}`);
           return;
         }
 
@@ -46,6 +47,8 @@ export async function CreateGame(userID: number, bettingTimeInMinutes:number = 5
           usersPlaying: newLiveGame.discordUsers,
         });
         gamesProcessing.delete(currentGameInfo.gameId);
+        newLiveGame.SendBetMessage();
+        console.log(`Finished Processing: NA1_${currentGameInfo.gameId}`);
         return;
       }
     } catch (error) {
