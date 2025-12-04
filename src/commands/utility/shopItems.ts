@@ -10,12 +10,12 @@ export function GetShopItemString(item: ShopItem) {
 // Shop Items
 const ChooseChamp: ShopItem = {
     name: "Keyboard & Mouse",
-    cost: 1000,
-    description: "Choose the creator's next champ."
+    cost: 2000,
+    description: "Choose the creator's next champ in ranked."
 };
 const RandomGame: ShopItem = {
     name: "Used Steam Gift Card",
-    cost: 2500,
+    cost: 5000,
     description: "Force the creator to play a specific video game."
 }
 const DifferentGameMode: ShopItem = {
