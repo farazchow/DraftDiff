@@ -17,8 +17,8 @@ export async function execute(interaction: CommandInteraction) {
         });
         return;
     }
-    const text = `__The top ${LEADERBOARD_LIMIT} richest users are:__\n
-        ${users.map((user, i) => `${i}. ${user.discordName}`).join(`\n`)}`;
+    const text = `**__The top ${LEADERBOARD_LIMIT} richest users are:__**
+    ${users.map((user, i) => (`**${i+1}. ${user.discordName}** *(${user.currentPoints} points)*`)).join(`\n`)}`;
     interaction.reply({
         content: text
     });
