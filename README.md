@@ -9,6 +9,8 @@ List of things I still need to implement / maybe will implement:
 - A command that sends money from one user to another
 - Command that showcases all active games.
 - Find a way to host this all not on my laptop.
+- A leaderboard command
+- Change bet system to not take other's points
 
 # Current Bugs
 - Race condition when multiple people start a game at the same time

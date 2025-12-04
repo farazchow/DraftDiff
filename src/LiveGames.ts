@@ -91,17 +91,14 @@ export class LiveGame {
         }
         result = participantDTOs[0].win ? "Win" : result;
         // Resolve Bets
-        const [winAmount, lossAmount] = this.GetBetTotals();
-
         for (const bet of this.bets) {
           const predicted = bet.predictedWin ? "Win" : "Loss";
+          
           let amountEarned = 0;
-          const correctSideTotal = result === "Win" ? winAmount : lossAmount;
-          const wrongSideTotal = result === "Win" ? lossAmount : winAmount;
           if (result == "Remake") {
             amountEarned = bet.pointsBet;
           } else if (result === predicted) {
-            amountEarned = Math.ceil(bet.pointsBet + (bet.pointsBet / correctSideTotal) * wrongSideTotal);
+            amountEarned = bet.pointsBet * 2;
           }
 
           // Create Prediction

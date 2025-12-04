@@ -8,9 +8,9 @@ import {
 import userModel from "../database/users";
 import { TransferPoints } from "../database/dbFunctions";
 
-const COOLDOWN_TIME = 30;
+const COOLDOWN_TIME = 30 * 60 * 1000;
 let cooldown = false;
-const timestamp = new Date();
+let timestamp = new Date();
 
 export const data = new SlashCommandBuilder()
   .setName("coinflip")
@@ -70,8 +70,8 @@ export async function execute(interaction: CommandInteraction) {
   }
   // Okay should be good to go now
   cooldown = true;
-  setTimeout(() => cooldown = false, COOLDOWN_TIME * 60 * 1000);
-  timestamp.setMinutes((new Date()).getMinutes() + COOLDOWN_TIME);
+  setTimeout(() => cooldown = false, COOLDOWN_TIME);
+  timestamp =  new Date(Date.now() + COOLDOWN_TIME);
   
   if (Math.random() > .5) {
     TransferPoints(undefined, userID, amount, "Won the coinflip!");
