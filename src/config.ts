@@ -14,6 +14,7 @@ const {
   MONGO_URI,
   RIOT_API_KEY,
   CHANNEL_ID,
+  ADMIN_ID
 } = process.env;
 
 if (!DISCORD_TOKEN || !DISCORD_CLIENT_ID) {
@@ -31,6 +32,9 @@ if (!RIOT_API_KEY) {
 if (!CHANNEL_ID) {
   throw new Error("Channel ID not specified.");
 }
+if (!ADMIN_ID) {
+  throw new Error("Admin ID not set.");
+}
 
 export const config = {
   DISCORD_TOKEN,
@@ -39,4 +43,5 @@ export const config = {
   MONGO_URI,
   RIOT_API_KEY,
   CHANNEL_ID,
+  ADMIN_ID,
 };

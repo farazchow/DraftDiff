@@ -42,7 +42,7 @@ export async function execute(interaction: CommandInteraction) {
   }
   if (cooldown) {
     interaction.reply({
-      content: `Sorry, coinflip is on cooldown. Try again at ${timestamp}`, 
+      content: `Sorry, coinflip is on cooldown. Try again at ${timestamp.toTimeString()}`, 
       flags: MessageFlags.Ephemeral
     });
     return;
@@ -69,15 +69,19 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
   // Okay should be good to go now
-  if (Math.random() > .5) {
-    TransferPoints(undefined, userID, amount, "Won the coinflip!");
-    interaction.reply(`Congrats ${userMention(interaction.user.id)}! You won ${amount} point(s)!`);
-  } else {
-    TransferPoints(userID, undefined, amount, "Lost the coinflip!");
-    interaction.reply(`Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)!`);
-  }
   cooldown = true;
   setTimeout(() => cooldown = false, COOLDOWN_TIME * 60 * 1000);
   timestamp.setMinutes((new Date()).getMinutes() + COOLDOWN_TIME);
-  console.log("Cooldown over at:", timestamp);
+  
+  if (Math.random() > .5) {
+    TransferPoints(undefined, userID, amount, "Won the coinflip!");
+    interaction.reply(
+      `Congrats ${userMention(interaction.user.id)}! You won ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()}`
+    );
+  } else {
+    TransferPoints(userID, undefined, amount, "Lost the coinflip!");
+    interaction.reply(
+      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()}`
+    );
+  }
 }

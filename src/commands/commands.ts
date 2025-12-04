@@ -2,8 +2,9 @@
 import * as stats from "./stats";
 import * as register from "./register";
 import * as addRiotID from "./addRiotID";
-import * as code from "./code"
-import * as coinflip from "./coinflip"
+import * as code from "./code";
+import * as coinflip from "./coinflip";
+import * as pointShop from "./pointShop";
 
 export const commands = new Map([
   // [ping.data.name, ping],
@@ -12,4 +13,5 @@ export const commands = new Map([
   [addRiotID.data.name, addRiotID],
   [code.data.name, code],
   [coinflip.data.name, coinflip],
+  [pointShop.data.name, pointShop]
 ]);

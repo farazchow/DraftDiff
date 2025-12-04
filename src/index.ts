@@ -15,6 +15,7 @@ import { FindLiveGame, LiveGames } from "./LiveGames";
 import { CheckVoice } from "./discord-functions/VoiceWatcher";
 import { SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
+import { handleShop } from "./commands/handleShop";
 // import { ResetDB } from "./database/dbFunctions";
 
 const WAITBEFOREPOLL = 10 * 1000;
@@ -31,7 +32,7 @@ mongoose
   .catch((err) => console.log(err));
 
 // Create Discord Client
-const client = new Client({
+export const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
@@ -98,6 +99,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       });
     } else {
       game.HandleBetModalSubmit(interaction);
+    }
+  } else if (interaction.isStringSelectMenu()) {
+    if (interaction.customId !== "shop-item") {
+      interaction.reply({
+        content: "Sorry, something went wrong. Try again later.",
+        flags: MessageFlags.Ephemeral
+      });
+    } else {
+      handleShop(interaction);
     }
   }
 });

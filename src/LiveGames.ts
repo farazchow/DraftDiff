@@ -101,9 +101,7 @@ export class LiveGame {
           if (result == "Remake") {
             amountEarned = bet.pointsBet;
           } else if (result === predicted) {
-            amountEarned =
-              bet.pointsBet +
-              Math.ceil((bet.pointsBet / correctSideTotal) * wrongSideTotal);
+            amountEarned = Math.ceil(bet.pointsBet + (bet.pointsBet / correctSideTotal) * wrongSideTotal);
           }
 
           // Create Prediction
