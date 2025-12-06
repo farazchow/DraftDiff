@@ -73,19 +73,19 @@ export async function execute(interaction: CommandInteraction) {
   cooldown = true;
   setTimeout(() => cooldown = false, COOLDOWN_TIME);
   timestamp =  new Date(Date.now() + COOLDOWN_TIME);
-  const amountEarned = Math.ceil(amount * (lossCounter ** 3)/100 + 2);
+  const amountEarned = Math.ceil(amount * ((lossCounter ** 3)/75 + 1));
   
   if (Math.random() > .5) {
     TransferPoints(undefined, userID, amountEarned, "Won the coinflip!");
     lossCounter = 0;
     interaction.reply(
-      `Congrats ${userMention(interaction.user.id)}! You won ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **2x**.`
+      `Congrats ${userMention(interaction.user.id)}! You won ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **1x**.`
     );
   } else {
     TransferPoints(userID, undefined, amount, "Lost the coinflip!");
     lossCounter += 1;
     interaction.reply(
-      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **${((lossCounter ** 3)/100 + 2).toFixed(2)}**.`
+      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **${((lossCounter ** 3)/75 + 1).toFixed(2)}**.`
     );
   }
 }
