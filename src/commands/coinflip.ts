@@ -11,6 +11,7 @@ import { TransferPoints } from "../database/dbFunctions";
 const COOLDOWN_TIME = 30 * 60 * 1000;
 let cooldown = false;
 let timestamp = new Date();
+let lossCounter = 0;
 
 export const data = new SlashCommandBuilder()
   .setName("coinflip")
@@ -72,16 +73,19 @@ export async function execute(interaction: CommandInteraction) {
   cooldown = true;
   setTimeout(() => cooldown = false, COOLDOWN_TIME);
   timestamp =  new Date(Date.now() + COOLDOWN_TIME);
+  const amountEarned = Math.ceil(amount * (lossCounter ** 3)/100 + 2);
   
   if (Math.random() > .5) {
-    TransferPoints(undefined, userID, amount, "Won the coinflip!");
+    TransferPoints(undefined, userID, amountEarned, "Won the coinflip!");
+    lossCounter = 0;
     interaction.reply(
-      `Congrats ${userMention(interaction.user.id)}! You won ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()}`
+      `Congrats ${userMention(interaction.user.id)}! You won ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **2x**.`
     );
   } else {
     TransferPoints(userID, undefined, amount, "Lost the coinflip!");
+    lossCounter += 1;
     interaction.reply(
-      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()}`
+      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **${((lossCounter ** 3)/100 + 2).toFixed(2)}**.`
     );
   }
 }
