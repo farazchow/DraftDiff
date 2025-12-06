@@ -18,7 +18,7 @@ const {
 } = process.env;
 
 if (!DISCORD_TOKEN || !DISCORD_CLIENT_ID) {
-  throw new Error("Missing Environment Variable");
+  throw new Error("Missing Discord ENV Variables"); 
 }
 if (!DISCORD_GUILD_ID) {
   throw new Error("Missing Dev Server ID");
