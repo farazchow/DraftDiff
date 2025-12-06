@@ -70,13 +70,14 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
   // Okay should be good to go now
+  const mult = () => ((lossCounter ** 3)/75 + 1);
   cooldown = true;
   setTimeout(() => cooldown = false, COOLDOWN_TIME);
   timestamp =  new Date(Date.now() + COOLDOWN_TIME);
-  const amountEarned = Math.ceil(amount * ((lossCounter ** 3)/75 + 1));
+  const amountEarned = Math.ceil(amount * mult());
   
   if (Math.random() > .5) {
-    TransferPoints(undefined, userID, amountEarned, "Won the coinflip!");
+    TransferPoints(undefined, userID, amountEarned, `Won the coinflip with a ${mult().toFixed(2)}x multiplier!`);
     lossCounter = 0;
     interaction.reply(
       `Congrats ${userMention(interaction.user.id)}! You won ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **1x**.`
@@ -85,7 +86,7 @@ export async function execute(interaction: CommandInteraction) {
     TransferPoints(userID, undefined, amount, "Lost the coinflip!");
     lossCounter += 1;
     interaction.reply(
-      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **${((lossCounter ** 3)/75 + 1).toFixed(2)}**.`
+      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **${mult().toFixed(2)}**.`
     );
   }
 }

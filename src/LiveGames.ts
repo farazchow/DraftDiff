@@ -238,7 +238,7 @@ export class LiveGame {
       .setMaxLength(10);
 
     const text = new TextDisplayBuilder().setContent(
-      `You currently have ${user.currentPoints} points. How much do you want to wager?`
+      `You currently have **${user.currentPoints} points**. How much do you want to wager?`
     );
     const amountLabel = new LabelBuilder()
       .setLabel(`How many points do you want to bet?`)
