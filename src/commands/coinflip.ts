@@ -80,7 +80,7 @@ export async function execute(interaction: CommandInteraction) {
     TransferPoints(undefined, userID, amountEarned, `Won the coinflip with a ${mult().toFixed(2)}x multiplier!`);
     lossCounter = 0;
     interaction.reply(
-      `Congrats ${userMention(interaction.user.id)}! You won ${amount} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **1x**.`
+      `Congrats ${userMention(interaction.user.id)}! You won ${amountEarned} point(s)! Coinflip is next available at ${timestamp.toTimeString()} with a muliplier of **1x**.`
     );
   } else {
     TransferPoints(userID, undefined, amount, "Lost the coinflip!");
