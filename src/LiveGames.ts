@@ -175,7 +175,7 @@ export class LiveGame {
     const freeWinButton = new ButtonBuilder()
       .setCustomId(`fw.${this.gameId.toString()}`)
       .setLabel("Bet on a win for free!")
-      .setStyle(ButtonStyle.Primary);
+      .setStyle(ButtonStyle.Success);
     const freeLossButton = new ButtonBuilder()
       .setCustomId(`fl.${this.gameId.toString()}`)
       .setLabel("Bet on a loss for free!")
@@ -183,7 +183,7 @@ export class LiveGame {
     const customButton = new ButtonBuilder()
       .setCustomId(this.gameId.toString())
       .setLabel("Bet with points!")
-      .setStyle(ButtonStyle.Success);
+      .setStyle(ButtonStyle.Primary);
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(freeWinButton, customButton, freeLossButton);
 
     // Get name of user
