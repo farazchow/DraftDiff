@@ -243,6 +243,15 @@ export class LiveGame {
     // If free wager
     if (interaction.customId.split(".").length !== 1) {
       const betType = interaction.customId.split(".")[0] == "fw";
+
+      // Already bet on this game (stops regular bet + free wager)
+      if (this.bets.filter((bet: Bets) => bet.userID === userID).length !== 0) {
+        await interaction.reply({
+          content: "You've already bet on this game!",
+          flags: MessageFlags.Ephemeral
+        });
+        return;
+      }
       this.AddBet(userID, betType, FREE_BET_AMOUNT, true);
 
       await interaction.reply({
@@ -319,6 +328,14 @@ export class LiveGame {
       interaction.followUp({
         content:
           "You tried to bet more than you currently have. Try again later.",
+      });
+      return;
+    }
+    
+    // Already bet on this game (stops regular bet + free wager)
+    if (this.bets.filter((bet: Bets) => bet.userID === userID).length !== 0) {
+      await interaction.followUp({
+        content: "You've already bet on this game!"
       });
       return;
     }
