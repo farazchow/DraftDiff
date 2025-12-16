@@ -18,8 +18,9 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
+  await interaction.deferReply();
   if (!(interaction instanceof ChatInputCommandInteraction)) {
-    interaction.reply(
+    interaction.editReply(
       "Something went wrong while trying to add a Riot ID. Sorry!"
     );
     return;
@@ -32,12 +33,12 @@ export async function execute(interaction: CommandInteraction) {
       $addToSet: { riotIds: riotAccountData.puuid },
     });
     const text = `${interaction.user.displayName} added RIOT ID ${riotID}`;
-    await interaction.reply(text);
+    await interaction.editReply(text);
   } catch (err) {
     if (err instanceof Error) {
-      interaction.reply(err.toString());
+      interaction.editReply(err.toString());
     } else {
-      interaction.reply(
+      interaction.editReply(
         "Something went wrong while trying to add a Riot ID. Sorry!"
       );
     }

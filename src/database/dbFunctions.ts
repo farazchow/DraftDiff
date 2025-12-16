@@ -9,14 +9,14 @@ export async function TransferPoints(
   amount: number,
   note: string
 ) {
-  if (sender) {
+  if (amount !== 0 && sender) {
     const senderUser = await userModel.findById(sender);
     if (senderUser && senderUser.currentPoints >= amount) {
       senderUser.currentPoints = senderUser.currentPoints - amount;
       senderUser.save();
     }
   }
-  if (receiver) {
+  if (amount !== 0 && receiver) {
     const receiverUser = await userModel.findById(receiver);
     if (receiverUser) {
       receiverUser.currentPoints = receiverUser.currentPoints + amount;

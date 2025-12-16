@@ -11,7 +11,7 @@ import { commands } from "./commands/commands";
 import { config } from "./config";
 import mongoose from "mongoose";
 import { CreateGame } from "./createGame";
-import { FindLiveGame, LiveGames } from "./LiveGames";
+import { FindLiveGame, LiveGame, LiveGames } from "./LiveGames";
 import { CheckVoice } from "./discord-functions/VoiceWatcher";
 import { SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
@@ -60,7 +60,9 @@ client.once(Events.ClientReady, async (readyClient) => {
   if (channel?.isSendable()) {
     mainChannel = channel;
   }
-  SendMessage({content: "DraftDiff is back online! Let the gambling begin! 🤑"});
+  SendMessage({
+    content: `DraftDiff is back online${process.env.NODE_ENV === "development" ? ' (in dev mode)': ''}! Let the gambling begin! 🤑`
+  });
   // await ResetDB();
   // console.log("Resetting DB");
 });
@@ -81,7 +83,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
     }
   } else if (interaction.isButton()) {
-    const game = FindLiveGame(interaction.customId);
+    let game: LiveGame | null = null;
+    if (interaction.customId.split(".").length === 1) {
+        game = FindLiveGame(interaction.customId);
+    }
+    else {
+      game = FindLiveGame(interaction.customId.split(".")[1])
+    }
     if (game === null) {
       interaction.reply({
         content: "Sorry, couldn't find this game.",

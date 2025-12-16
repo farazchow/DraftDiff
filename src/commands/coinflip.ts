@@ -3,7 +3,6 @@ import {
   CommandInteraction,
   ChatInputCommandInteraction,
   userMention,
-  MessageFlags,
 } from "discord.js";
 import userModel from "../database/users";
 import { TransferPoints } from "../database/dbFunctions";
@@ -24,8 +23,9 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
+  await interaction.deferReply();
   if (!(interaction instanceof ChatInputCommandInteraction)) {
-    interaction.reply(
+    interaction.editReply(
       "Something went wrong while trying to coinflip. Sorry!"
     );
     return;
@@ -35,37 +35,32 @@ export async function execute(interaction: CommandInteraction) {
   const amount = Math.floor(Number(interaction.options.getString("bet-amount")));
 
   if (!user) {
-    interaction.reply({
+    interaction.editReply({
       content: "You aren't registered with DraftDiff. Do /register to start!", 
-      flags: MessageFlags.Ephemeral
     });
     return;
   }
   if (cooldown) {
-    interaction.reply({
+    interaction.editReply({
       content: `Sorry, coinflip is on cooldown. Try again at ${timestamp.toTimeString()}`, 
-      flags: MessageFlags.Ephemeral
     });
     return;
   }
   if (isNaN(amount)) {
-    interaction.reply({
+    interaction.editReply({
       content: "You didn't input a proper number. Try again later.",
-      flags: MessageFlags.Ephemeral
     });
     return;
   }
   if (amount <= 0) {
-    interaction.reply({
+    interaction.editReply({
       content: "Positive numbers only. Try again later.",
-      flags: MessageFlags.Ephemeral
     });
     return;
   }
   if (amount > user.currentPoints) {
-    interaction.reply({
+    interaction.editReply({
       content: "Tried betting more points than you had! Try again later.",
-      flags: MessageFlags.Ephemeral
   });
     return;
   }
@@ -79,14 +74,14 @@ export async function execute(interaction: CommandInteraction) {
   if (Math.random() > .5) {
     TransferPoints(undefined, userID, amountEarned, `Won the coinflip with a ${mult().toFixed(2)}x multiplier!`);
     lossCounter = 0;
-    interaction.reply(
-      `Congrats ${userMention(interaction.user.id)}! You won ${amountEarned} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a mulitplier of **1x**.`
+    await interaction.editReply(
+      `Congrats ${userMention(interaction.user.id)}! You won ${amountEarned} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a multiplier of **1x**.`
     );
   } else {
     TransferPoints(userID, undefined, amount, "Lost the coinflip!");
     lossCounter += 1;
-    interaction.reply(
-      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a muliplier of **${mult().toFixed(2)}x**.`
+    await interaction.editReply(
+      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a multiplier of **${mult().toFixed(2)}x**.`
     );
   }
 }

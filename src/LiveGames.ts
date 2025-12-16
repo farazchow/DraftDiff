@@ -23,6 +23,8 @@ import { EditMessage, ReplyTo, SendMessage } from "./discord-functions/SendMessa
 import userModel from "./database/users";
 
 const POLLING_RATE = 15 * 1000;
+const WIN_REWARD = 50;
+const FREE_BET_AMOUNT = 5;
 
 export let LiveGames: LiveGame[] = [];
 
@@ -55,10 +57,14 @@ export class LiveGame {
     }, bettingTimeInMinutes * 60 * 1000);
   }
 
-  async AddBet(userID: number, predicted_win: boolean, pointsBet: number) {
+  async AddBet(userID: number, predicted_win: boolean, pointsBet: number, free: boolean = true) {
     if (this.betting) {
       this.bets.push(new Bets(userID, predicted_win, pointsBet));
-      TransferPoints(userID, undefined, pointsBet, `Bet on NA1_${this.gameId}`);
+      if (!free) {      
+        TransferPoints(userID, undefined, pointsBet, `Bet on NA1_${this.gameId}`);
+      } else {
+        TransferPoints(userID, undefined, 0, `Free Bet ${pointsBet} points on NA1_${this.gameId}`);
+      }
       await this.SendBetMessage();
     } else {
       console.error(`Betting window for game ${this.gameId} is closed.`);
@@ -124,7 +130,7 @@ export class LiveGame {
         
         if (result === "Win") {
           for (const id of this.discordUsers) {
-            TransferPoints(undefined, id, 25, "Nice Win!");
+            TransferPoints(undefined, id, WIN_REWARD, "Nice Win!");
           }
         }
 
@@ -166,11 +172,19 @@ export class LiveGame {
   // Construct Discord Message for this game
   async SendBetMessage() {
     const [winAmount, lossAmount] = this.GetBetTotals();
-    const button = new ButtonBuilder()
-      .setCustomId(this.gameId.toString())
-      .setLabel("Bet on this game!")
+    const freeWinButton = new ButtonBuilder()
+      .setCustomId(`fw.${this.gameId.toString()}`)
+      .setLabel("Bet on a win for free!")
       .setStyle(ButtonStyle.Primary);
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+    const freeLossButton = new ButtonBuilder()
+      .setCustomId(`fl.${this.gameId.toString()}`)
+      .setLabel("Bet on a loss for free!")
+      .setStyle(ButtonStyle.Danger);
+    const customButton = new ButtonBuilder()
+      .setCustomId(this.gameId.toString())
+      .setLabel("Bet with points!")
+      .setStyle(ButtonStyle.Success);
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(freeWinButton, customButton, freeLossButton);
 
     // Get name of user
     const competitors = [];
@@ -226,6 +240,18 @@ export class LiveGame {
       return;
     }
 
+    // If free wager
+    if (interaction.customId.split(".").length !== 1) {
+      const betType = interaction.customId.split(".")[0] == "fw";
+      this.AddBet(userID, betType, FREE_BET_AMOUNT, true);
+
+      await interaction.reply({
+        content: "Thank you for betting!",
+        flags: MessageFlags.Ephemeral
+      });
+      return;
+    }
+
     const modal = new ModalBuilder()
       .setCustomId(this.gameId.toString())
       .setTitle("DraftDiff Bookie");
@@ -248,7 +274,7 @@ export class LiveGame {
       .setCustomId("betType")
       .setRequired(true)
       .setMaxValues(1)
-      .addOptions(
+      .addOptions(  
         new StringSelectMenuOptionBuilder().setLabel("Bet Win").setValue("win"),
         new StringSelectMenuOptionBuilder()
           .setLabel("Bet Loss")

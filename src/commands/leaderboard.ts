@@ -8,6 +8,7 @@ export const data = new SlashCommandBuilder()
     .setDescription(`Shows the ${LEADERBOARD_LIMIT} richest users`);
 
 export async function execute(interaction: CommandInteraction) {
+    await interaction.deferReply();
     const users = await userModel.find({})
         .sort({currentPoints: "descending"})
         .limit(LEADERBOARD_LIMIT);
@@ -19,7 +20,7 @@ export async function execute(interaction: CommandInteraction) {
     }
     const text = `**__The top ${LEADERBOARD_LIMIT} richest users are:__**
     ${users.map((user, i) => (`**${i+1}. ${user.discordName}** *(${user.currentPoints} points)*`)).join(`\n`)}`;
-    interaction.reply({
+    interaction.editReply({
         content: text
     });
 }
