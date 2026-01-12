@@ -7,10 +7,12 @@ import {
 import userModel from "../database/users";
 import { TransferPoints } from "../database/dbFunctions";
 
-const COOLDOWN_TIME = 30 * 60 * 1000;
+const COOLDOWN_TIME = 15 * 60 * 1000;
 let cooldown = false;
 let timestamp = new Date();
-let lossCounter = 0;
+// let lossCounter = 0;
+let accumulatedPoint = 0;
+const ACCUMULATION_RATIO = .25;
 
 export const data = new SlashCommandBuilder()
   .setName("coinflip")
@@ -64,24 +66,29 @@ export async function execute(interaction: CommandInteraction) {
   });
     return;
   }
+  
   // Okay should be good to go now
-  const mult = () => ((lossCounter ** 3)/75 + 1);
+  // const mult = () => ((lossCounter ** 3)/75 + 1);
   cooldown = true;
   setTimeout(() => cooldown = false, COOLDOWN_TIME);
   timestamp =  new Date(Date.now() + COOLDOWN_TIME);
-  const amountEarned = Math.ceil(amount * mult());
+  // const amountEarned = Math.ceil(amount * mult());
+  const amountEarned = amount + accumulatedPoint;
+
   
   if (Math.random() > .5) {
-    TransferPoints(undefined, userID, amountEarned, `Won the coinflip with a ${mult().toFixed(2)}x multiplier!`);
-    lossCounter = 0;
+    TransferPoints(undefined, userID, amountEarned, `Won the coinflip with a bonus ${accumulatedPoint} points`);
+    accumulatedPoint = 0;
+    // lossCounter = 0;
     await interaction.editReply(
-      `Congrats ${userMention(interaction.user.id)}! You won ${amountEarned} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a multiplier of **1x**.`
+      `Congrats ${userMention(interaction.user.id)}! You won ${amountEarned} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a bonus of **0 points**.`
     );
   } else {
     TransferPoints(userID, undefined, amount, "Lost the coinflip!");
-    lossCounter += 1;
+    // lossCounter += 1;
+    accumulatedPoint += Math.ceil(amount * ACCUMULATION_RATIO);
     await interaction.editReply(
-      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a multiplier of **${mult().toFixed(2)}x**.`
+      `Congrats ${userMention(interaction.user.id)}! You lost ${amount} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a bonus of **${accumulatedPoint} points**.`
     );
   }
 }
