@@ -15,7 +15,7 @@ import { FindLiveGame, LiveGame, LiveGames } from "./LiveGames";
 import { CheckVoice } from "./discord-functions/VoiceWatcher";
 import { SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
-import { handleShop } from "./commands/handleShop";
+import { handleConfirmedPurchase, handleShop } from "./commands/handleShop";
 // import { ResetDB } from "./database/dbFunctions";
 
 const WAITBEFOREPOLL = 10 * 1000;
@@ -83,6 +83,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
     }
   } else if (interaction.isButton()) {
+    // Point Buy
+    if (interaction.customId.startsWith("cancel") || interaction.customId.startsWith("confirm")) {
+      handleConfirmedPurchase(interaction);
+      return;
+    }
+
+    // Find Game
     let game: LiveGame | null = null;
     if (interaction.customId.split(".").length === 1) {
         game = FindLiveGame(interaction.customId);
@@ -90,6 +97,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     else {
       game = FindLiveGame(interaction.customId.split(".")[1])
     }
+
+    // Bet on Game
     if (game === null) {
       interaction.reply({
         content: "Sorry, couldn't find this game.",
