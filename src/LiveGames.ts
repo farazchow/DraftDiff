@@ -85,7 +85,7 @@ export class LiveGame {
       if (finishedGame) {
         // Find result
         let result = "Loss";
-        result = finishedGame.info.gameDuration < 5 * 60 ? "Remake" : result;
+        result = finishedGame.info.gameDuration <= 5 * 60 ? "Remake" : result;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const participantDTOs = (finishedGame.info.participants as Array<any>).filter((p: any) => this.riotIds.includes(p.puuid));
         if (!participantDTOs || participantDTOs.length !== this.riotIds.length) {
@@ -95,7 +95,7 @@ export class LiveGame {
           console.error(`No eligible participants found: NA1_${this.gameId}`);
           return false;
         }
-        result = participantDTOs[0].win ? "Win" : result;
+        result = ((result !== "Remake") && (participantDTOs[0].win)) ? "Win" : result;
         // Resolve Bets
         for (const bet of this.bets) {
           const predicted = bet.predictedWin ? "Win" : "Loss";
