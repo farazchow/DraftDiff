@@ -61,7 +61,7 @@ export class LiveGame {
     }, bettingTimeInMinutes * 60 * 1000);
   }
 
-  async AddBet(userID: number, predicted_win: boolean, pointsBet: number, free: boolean = true) {
+  async AddBet(userID: number, predicted_win: boolean, pointsBet: number, free: boolean = false) {
     if (this.betting) {
       this.bets.push(new Bets(userID, predicted_win, pointsBet));
       if (!free) {      
