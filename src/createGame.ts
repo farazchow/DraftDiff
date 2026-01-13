@@ -2,8 +2,19 @@ import userModel from "./database/users";
 import gameMatchModel from "./database/game_matches";
 import { LiveGames, LiveGame } from "./LiveGames";
 import { getLiveGame } from "./RiotFunctions";
+import { ChampData } from "./database/champData";
 
 const gamesProcessing: Set<number> = new Set();
+const champData = new ChampData();
+
+export type Competitor = {
+  puuid: string;
+  discordId?: number;
+  discordName?: string;
+  champName: string;
+  blueSide: boolean;
+  result?: string;
+}
 
 export async function CreateGame(userID: number, bettingTimeInMinutes:number = 5) {
   const registeredUser = await userModel.findById(userID);
@@ -33,9 +44,17 @@ export async function CreateGame(userID: number, bettingTimeInMinutes:number = 5
         for (const participant of currentGameInfo.participants) {
           const p = await userModel.findOne({ riotIds: participant.puuid });
           if (p) {
-            newLiveGame.discordUsers.push(p._id);
             newLiveGame.riotIds.push(participant.puuid);
+            newLiveGame.discordUsers.push(p._id);
           }
+          const competitor: Competitor = {
+            puuid: participant.puuid ?? "null",
+            discordId: (p) ? p._id : undefined,
+            discordName: (p) ? p.discordName : undefined,
+            champName: champData.get(participant.championID),
+            blueSide: (participant.teamId === 100)
+          };
+          newLiveGame.competitors.push(competitor);
         }
 
         // Add to our current list of live games.

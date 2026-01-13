@@ -8,6 +8,8 @@ import {
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
+  ContainerBuilder,
+  EmbedBuilder,
   LabelBuilder,
   Message,
   MessageFlags,
@@ -21,6 +23,7 @@ import {
 } from "discord.js";
 import { EditMessage, ReplyTo, SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
+import { Competitor } from "./createGame";
 
 const POLLING_RATE = 15 * 1000;
 const WIN_REWARD = 50;
@@ -32,6 +35,7 @@ export class LiveGame {
   gameId: number;
   riotIds: string[] = [];
   discordUsers: number[] = [];
+  competitors: Competitor[] = [];
 
   betting: boolean;
   unixTimeStamp: string;
@@ -73,9 +77,9 @@ export class LiveGame {
 
   // Returns False if game is ongoing, True if resolved appropriately
   async ResolveGame(): Promise<boolean> {
-    if (this.intervalID && this.riotIds.length !== 0) {
+    if (this.intervalID && this.competitors.length !== 0) {
       // If game is ongoing
-      const liveData = await getLiveGame(this.riotIds[0].toString());
+      const liveData = await getLiveGame(this.competitors[0].puuid);
       if (liveData) {
         return false;
       }
@@ -86,16 +90,16 @@ export class LiveGame {
         // Find result
         let result = "Loss";
         result = finishedGame.info.gameDuration <= 5 * 60 ? "Remake" : result;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const participantDTOs = (finishedGame.info.participants as Array<any>).filter((p: any) => this.riotIds.includes(p.puuid));
-        if (!participantDTOs || participantDTOs.length !== this.riotIds.length) {
-          console.error(finishedGame.info.participants);
-          console.error(participantDTOs);
-          console.error(participantDTOs.length, this.riotIds.length);
-          console.error(`No eligible participants found: NA1_${this.gameId}`);
-          return false;
+
+        // Set Results for each competitor
+        for (const participantDTO of finishedGame.info.participants) {
+          const matchedParticipant = this.competitors.filter((c) => c.puuid === participantDTO.puuid)[0]
+          matchedParticipant.result = (result === "Remake") ? result : participantDTO.win ? "Win": result;
+          if (matchedParticipant.discordId) {
+            result = matchedParticipant.result;
+          }
         }
-        result = ((result !== "Remake") && (participantDTOs[0].win)) ? "Win" : result;
+
         // Resolve Bets
         for (const bet of this.bets) {
           const predicted = bet.predictedWin ? "Win" : "Loss";
@@ -128,9 +132,10 @@ export class LiveGame {
           }
         }
         
-        if (result === "Win") {
-          for (const id of this.discordUsers) {
-            TransferPoints(undefined, id, WIN_REWARD, "Nice Win!");
+        // Reward winners
+        for (const competitor of this.competitors) {
+          if (competitor.discordId && competitor.result === "Win") {
+            TransferPoints(undefined, competitor.discordId, WIN_REWARD, "Nice Win!");
           }
         }
 
@@ -144,11 +149,21 @@ export class LiveGame {
         LiveGames = LiveGames.filter((game) => game.gameId !== this.gameId);
         // Stop the check for this game
         clearInterval(this.intervalID);
+
+        const resolvedContainerMessage = new ContainerBuilder()
+          .setAccentColor(0xffd900)
+          .addTextDisplayComponents((textDisplay) => 
+            textDisplay.setContent(
+              `NA1_${this.gameId} is over! The result was a ${result}.`
+            ),
+          );
+
         ReplyTo(this.message!, {
-          content: `NA1_${this.gameId} is over! The result was a ${result}.`
+          components: [resolvedContainerMessage],
+          flags: MessageFlags.IsComponentsV2
         });
       } else {
-        console.error("Game was both not live, nor finished: NA1_", this.gameId);
+        console.log("Game was both not live, nor finished: NA1_", this.gameId);
         return false;
       }
     }
@@ -187,18 +202,52 @@ export class LiveGame {
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(freeWinButton, customButton, freeLossButton);
 
     // Get name of user
-    const competitors = [];
-    for (const id of this.discordUsers) {
-      const user = await userModel.findById(id)
-      competitors.push(user?.discordName);
+    const discordCompetitors = [];
+    const redTeamChamps = [];
+    const blueTeamChamps = [];
+    for (const competitor of this.competitors) {
+      if (competitor.discordName) {
+        discordCompetitors.push(competitor.discordName);
+      }
+      if (competitor.blueSide) {
+        blueTeamChamps.push(`${competitor.champName}${competitor.discordName ? ` (${competitor.discordName})` : ""}`)
+      } else {
+        redTeamChamps.push(`${competitor.champName}${competitor.discordName ? ` (${competitor.discordName})` : ""}`)
+      }
     }
-    const text = `${competitors.toString()} begun a ranked game and betting is now open! There are ${winAmount + lossAmount} points currently riding on this game. \n
-    There is 🟦 ${winAmount} 🟦 betting on a win, and 🟥 ${lossAmount} 🟥 betting on a loss! \n
-    Betting closes in <t:${this.unixTimeStamp}:R>. 
-    `;
+
+    let competitorText: string = "";
+
+    if (this.competitors.length > 1) {
+      const lastName = discordCompetitors.pop();
+      competitorText = `**${discordCompetitors.join(", ")}** and **${lastName}** have begun`;
+    } else {
+      competitorText = `**${this.discordUsers[0]}** has started`;
+    }
+
+    const text = `${competitorText} begun a ranked game and betting is now open! There is 🟦 ${winAmount} 🟦 betting on a win, and 🟥 ${lossAmount} 🟥 betting on a loss! Betting closes in <t:${this.unixTimeStamp}:R>.`;
+
+    const BetMessageEmbed = new EmbedBuilder()
+      .setTitle(`NA1${this.gameId}`)
+      .setColor("#00a6ff")
+      .setDescription(text)
+      .addFields({
+        name: 'Blue Team',
+        value: `\`\`\`
+        ${blueTeamChamps.join("\n")}
+        \`\`\``,
+        inline: true
+      })
+      .addFields({
+        name: 'Red Team',
+        value: `\`\`\`
+        ${redTeamChamps.join("\n")}
+        \`\`\``,
+        inline: true
+      });
 
     const messageContent: BaseMessageOptions = {
-      content: text,
+      embeds: [BetMessageEmbed],
       components: [row],
     };
 
