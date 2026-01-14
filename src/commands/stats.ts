@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, CommandInteraction } from "discord.js";
 import userModel from "../database/users";
+import { stockMarket } from "../data-fetcher/StockMarket";
 
 export const data = new SlashCommandBuilder()
   .setName("stats")
@@ -13,8 +14,12 @@ export async function execute(interaction: CommandInteraction) {
     new Date().getUTCMonth() === user?.lastRewarded.getUTCMonth()
   );
   if (user) {
+    let investedAmount = 0;
+    for (const stock of [stockMarket.ESTC, stockMarket.MIT, stockMarket.TEN, stockMarket.PHF]) {
+      investedAmount += (user.stocks.get(stock.ticker) ?? 0) * stock.value;
+    }
     interaction.editReply(
-      `${interaction.user.displayName} has ${user.currentPoints} coins, and their daily reward is ${dailyRewardAvailable ? "" : "not "}available.`
+      `${interaction.user.displayName} has **${user.currentPoints} coins** and **${investedAmount} coins invested**. Their daily reward is **${dailyRewardAvailable ? "" : "not "}available**.`
     );
   } else {
     interaction.editReply(

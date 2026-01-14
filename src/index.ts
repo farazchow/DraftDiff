@@ -16,6 +16,7 @@ import { CheckVoice } from "./discord-functions/VoiceWatcher";
 import { SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
 import { handleConfirmedPurchase, handleShop } from "./commands/handleShop";
+import { stockMarket } from "./data-fetcher/StockMarket";
 // import { ResetDB } from "./database/dbFunctions";
 
 const WAITBEFOREPOLL = 10 * 1000;
@@ -69,6 +70,11 @@ client.once(Events.ClientReady, async (readyClient) => {
 
 // User interaction
 client.on(Events.InteractionCreate, async (interaction) => {
+  // Stops people using bot while in dev mode
+  if (interaction.guildId !== config.DISCORD_GUILD_ID) {
+    return;
+  }
+
   if (interaction.isCommand()) {
     const { commandName } = interaction;
     if (commands.get(commandName)) {
@@ -86,6 +92,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // Point Buy
     if (interaction.customId.startsWith("cancel") || interaction.customId.startsWith("confirm")) {
       handleConfirmedPurchase(interaction);
+      return;
+    }
+
+    if (interaction.customId.startsWith("sb")) {
+      stockMarket.HandleBuyButton(interaction);
+      return;
+    }
+    if (interaction.customId.startsWith("ss")) {
+      stockMarket.HandleSellButton(interaction);
       return;
     }
 
@@ -108,6 +123,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       game.HandleBetButton(interaction);
     }
   } else if (interaction.isModalSubmit()) {
+    if (interaction.customId === "invest") {
+      stockMarket.HandleInvestModal(interaction);
+      return;
+    }
+    if (interaction.customId === "divest") {
+      stockMarket.HandleDivestModal(interaction);
+      return;
+    }
+
     const game = FindLiveGame(interaction.customId);
     if (game === null) {
       interaction.reply({

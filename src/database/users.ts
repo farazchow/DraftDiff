@@ -1,6 +1,15 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+export interface IUser {
+  _id: number;
+  discordName: string;
+  currentPoints: number;
+  riotIds: string[];
+  lastRewarded: Date;
+  stocks: Map<string, number>;
+}
+
+const userSchema = new mongoose.Schema<IUser>({
   _id: {
     type: Number,
     required: true,
@@ -18,7 +27,11 @@ const userSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  stocks: {
+    type: Map,
+    of: Number,
+  }
 });
 
-const userModel = mongoose.model("Users", userSchema);
+const userModel = mongoose.model<IUser>("Users", userSchema);
 export default userModel;
