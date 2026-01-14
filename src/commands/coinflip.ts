@@ -12,7 +12,7 @@ let cooldown = false;
 let timestamp = new Date();
 // let lossCounter = 0;
 let accumulatedPoint = 0;
-const ACCUMULATION_RATIO = .25;
+const ACCUMULATION_RATIO = .5;
 
 export const data = new SlashCommandBuilder()
   .setName("coinflip")
@@ -73,12 +73,13 @@ export async function execute(interaction: CommandInteraction) {
   setTimeout(() => cooldown = false, COOLDOWN_TIME);
   timestamp =  new Date(Date.now() + COOLDOWN_TIME);
   // const amountEarned = Math.ceil(amount * mult());
-  const amountEarned = amount + accumulatedPoint;
+  const bonusEarned = Math.min(accumulatedPoint, amount);
+  const amountEarned = amount + bonusEarned;
 
   
   if (Math.random() > .5) {
-    TransferPoints(undefined, userID, amountEarned, `Won the coinflip with a bonus ${accumulatedPoint} points`);
-    accumulatedPoint = 0;
+    TransferPoints(undefined, userID, amountEarned, `Won the coinflip with a bonus ${bonusEarned} points`);
+    accumulatedPoint -= bonusEarned;
     // lossCounter = 0;
     await interaction.editReply(
       `Congrats ${userMention(interaction.user.id)}! You won ${amountEarned} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a bonus of **0 points**.`
