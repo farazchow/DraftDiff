@@ -1,4 +1,8 @@
+// Utilities
 // import * as ping from "./utility/ping";
+// import * as migration from "./utility/migration";
+// import * as getchamp from "./utility/getchamp";
+
 import * as stats from "./stats";
 import * as register from "./register";
 import * as addRiotID from "./addRiotID";
@@ -8,7 +12,7 @@ import * as pointShop from "./pointShop";
 import * as leaderboard from "./leaderboard";
 import * as pay from "./pay";
 import * as stocks from "./stocks";
-// import * as migration from "./utility/migration";
+
 
 export const commands = new Map([
   // [ping.data.name, ping],
@@ -22,4 +26,5 @@ export const commands = new Map([
   [pay.data.name, pay],
   [stocks.data.name, stocks],
   // [migration.data.name, migration],
+  // [getchamp.data.name, getchamp]
 ]);

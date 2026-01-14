@@ -20,6 +20,7 @@ import {
   TextDisplayBuilder,
   TextInputBuilder,
   TextInputStyle,
+  codeBlock
 } from "discord.js";
 import { EditMessage, ReplyTo, SendMessage } from "./discord-functions/SendMessage";
 import userModel from "./database/users";
@@ -218,14 +219,14 @@ export class LiveGame {
 
     let competitorText: string = "";
 
-    if (this.competitors.length > 1) {
+    if (discordCompetitors.length > 1) {
       const lastName = discordCompetitors.pop();
       competitorText = `**${discordCompetitors.join(", ")}** and **${lastName}** have begun`;
     } else {
-      competitorText = `**${this.discordUsers[0]}** has started`;
+      competitorText = `**${discordCompetitors[0]}** has started`;
     }
 
-    const text = `${competitorText} begun a ranked game and betting is now open! There is 🟦 ${winAmount} 🟦 betting on a win, and 🟥 ${lossAmount} 🟥 betting on a loss! Betting closes in <t:${this.unixTimeStamp}:R>.`;
+    const text = `${competitorText} a ranked game and betting is now open! There is 🟦 ${winAmount} 🟦 betting on a win, and 🟥 ${lossAmount} 🟥 betting on a loss! Betting closes in <t:${this.unixTimeStamp}:R>.`;
 
     const BetMessageEmbed = new EmbedBuilder()
       .setTitle(`NA1${this.gameId}`)
@@ -233,16 +234,12 @@ export class LiveGame {
       .setDescription(text)
       .addFields({
         name: 'Blue Team',
-        value: `\`\`\`
-        ${blueTeamChamps.join("\n")}
-        \`\`\``,
+        value: `\n${codeBlock(blueTeamChamps.join(`\n`))}`,
         inline: true
       })
       .addFields({
         name: 'Red Team',
-        value: `\`\`\`
-        ${redTeamChamps.join("\n")}
-        \`\`\``,
+        value: `\n${codeBlock(redTeamChamps.join(`\n`))}`, 
         inline: true
       });
 

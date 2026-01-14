@@ -51,7 +51,7 @@ export async function CreateGame(userID: number, bettingTimeInMinutes:number = 5
             puuid: participant.puuid ?? "null",
             discordId: (p) ? p._id : undefined,
             discordName: (p) ? p.discordName : undefined,
-            champName: champData.get(participant.championID),
+            champName: champData.get(participant.championId),
             blueSide: (participant.teamId === 100)
           };
           newLiveGame.competitors.push(competitor);
