@@ -6,9 +6,7 @@ const stockSchema = new mongoose.Schema(
     TEN: {type: Number, required: true},
     PHF: {type: Number, required: true},
     MIT: {type: Number, required: true},
-  },
-  {
-    timestamps: true,
+    time: {type: Date, required: true},
   }
 );
 

@@ -2,8 +2,12 @@ import { ButtonInteraction, LabelBuilder, MessageFlags, ModalBuilder, ModalSubmi
 import stockModel from "../database/stocks";
 import userModel, { IUser } from "../database/users";
 import { TransferPoints } from "../database/dbFunctions";
+import { scrapeOPGG } from "./scrapeOPGG";
+import { getStockData } from "./getStockData";
 
-const UPDATE_INTERVAL = 120 * 60 * 1000;
+const UPDATE_INTERVAL = 1 * 60 * 1000;
+const SHURIMAN_CHAMPS = new Set(["Akshan", "Amumu", "Azir", "K'Sante", "Naafiri", "Nasus", "Rammus", "Renekton", "Sivir", "Taliyah", "Xerath"]);
+
 
 class StockMarket {
     ESTC: Stock = {
@@ -11,24 +15,28 @@ class StockMarket {
         ticker: "ESTC",
         description: "With your financial support, Shurima will once again stretch to the horizon.",
         value: 50,
+        events: [1, 1, 1, 1, 4, 5, 6, 10, -1, -1, -1, -4, -5, -11, -4, -2],
     };
     TEN: Stock = {
         name: "Tencent Holdings",
         ticker: "TEN",
         description: 'Owns Riot Games. Sometimes they also make other games.',
         value: 80,
+        events: [2, 3, 4, 5, 12, 20, 2, 2, 2, 4, 3, 5, -2, -2, -3, -4, -22, -13, -18]
     };
     PHF: Stock = {
         name: "Prismatic Hedge Fund LLC",
         ticker: "PHF",
         description: "Rolling down right now, but will be back to max interest soon. Never punished.",
         value: 1000,
+        events: [75, 50, 100, -5, -5, -5, -10, -10, -13, -13, -13, -13, -13, -13, -13, -22, -22, -22, -33]
     };
     MIT: Stock = {
         name: "Stud TeaDo",
         ticker: "MIT",
         description: "Home to many despondent and hungry students.",
         value: 15,
+        events: [-1, -1, -1, -3, -5, 1, 1, 2, 2, 6, -1]
     };
     intervalID: NodeJS.Timeout;
 
@@ -42,24 +50,41 @@ class StockMarket {
     }
 
     async updateESTC() {
-        const newValue = this.ESTC.value + (Math.random() > .5 ? 5 : -5);
-        this.ESTC.value = newValue;
+        const event = this.ESTC.events[Math.floor(Math.random() * this.ESTC.events.length)];
+        const data = await scrapeOPGG();
+        let newBaseValue = 0;
+        data.map((champ) => {
+            if (SHURIMAN_CHAMPS.has(champ.name)) {
+                newBaseValue += champ.winrate;
+            }
+        });
+        if (!this.ESTC.baseValue) {
+            this.ESTC.baseValue = newBaseValue;
+        }
+        const update = event + Math.ceil(15*(newBaseValue - this.ESTC.baseValue));
+        this.ESTC.value = Math.max(this.ESTC.value + update, 0);
     }
     async updateTEN() {
-        const newValue = this.TEN.value + (Math.random() > .5 ? 5 : -5);
-        this.TEN.value = newValue;
+        const event = this.TEN.events[Math.floor(Math.random() * this.TEN.events.length)];
+        this.TEN.value = Math.max(this.TEN.value + event, 0);
+        const newBaseValue = (await getStockData("TCEHY")).close;
+        if (!this.TEN.baseValue) {
+            this.TEN.baseValue = newBaseValue;
+        }
+        const update = event + Math.ceil(30 * (newBaseValue - this.TEN.baseValue));
+        this.TEN.value = Math.max(this.TEN.value + update, 0);
     }
     async updatePHF() {
-        const newValue = this.PHF.value + (Math.random() > .5 ? 5 : -5);
-        this.PHF.value = newValue;
+        const event = this.PHF.events[Math.floor(Math.random() * this.PHF.events.length)];
+        this.PHF.value = Math.max(this.PHF.value + event, 0);
     }
     async updateMIT() {
-        const newValue = this.MIT.value + (Math.random() > .5 ? 5 : -5);
-        this.MIT.value = newValue;
+        const event = this.MIT.events[Math.floor(Math.random() * this.MIT.events.length)];
+        this.MIT.value = Math.max(this.MIT.value + event, 0);
     }
 
     async reconstructMarket() {
-        const lastLoggedValues = await stockModel.findOne();
+        const lastLoggedValues = await stockModel.findOne({}, {}, {sort: {time: -1}})
         if (lastLoggedValues) {
             this.ESTC.value = lastLoggedValues.ESTC;
             this.MIT.value = lastLoggedValues.MIT;
@@ -69,16 +94,18 @@ class StockMarket {
     }
 
     async updateAndLogStocks() {
-        this.updateESTC();
-        this.updateTEN();
-        this.updatePHF();
-        this.updateMIT();
+        await this.updateESTC();
+        await this.updateTEN();
+        await this.updatePHF();
+        await this.updateMIT();
         await stockModel.create({
             ESTC: this.ESTC.value,
             TEN: this.TEN.value,
             PHF: this.PHF.value,
             MIT: this.MIT.value,
+            time: new Date(),
         });
+        console.log("Finished updating and logging");
     }
 
     GenerateStockMessage(user: IUser) {
@@ -312,6 +339,8 @@ export type Stock = {
     ticker: string;
     description: string;
     value: number;
+    events: number[];
+    baseValue?: number;
 }
 
 export const stockMarket = new StockMarket();

@@ -13,6 +13,7 @@ const {
   DISCORD_GUILD_ID,
   MONGO_URI,
   RIOT_API_KEY,
+  FINNHUB_KEY,
   CHANNEL_ID,
   ADMIN_ID
 } = process.env;
@@ -35,6 +36,9 @@ if (!CHANNEL_ID) {
 if (!ADMIN_ID) {
   throw new Error("Admin ID not set.");
 }
+if (!FINNHUB_KEY) {
+  throw new Error("Alpha Vantage Key not set");
+}
 
 export const config = {
   DISCORD_TOKEN,
@@ -44,4 +48,5 @@ export const config = {
   RIOT_API_KEY,
   CHANNEL_ID,
   ADMIN_ID,
+  FINNHUB_KEY
 };
