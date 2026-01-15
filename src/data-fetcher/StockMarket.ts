@@ -5,7 +5,7 @@ import { TransferPoints } from "../database/dbFunctions";
 import { scrapeOPGG } from "./scrapeOPGG";
 import { getStockData } from "./getStockData";
 
-const UPDATE_INTERVAL = 1 * 60 * 1000;
+const UPDATE_INTERVAL = 60 * 60 * 1000;
 const SHURIMAN_CHAMPS = new Set(["Akshan", "Amumu", "Azir", "K'Sante", "Naafiri", "Nasus", "Rammus", "Renekton", "Sivir", "Taliyah", "Xerath"]);
 
 
