@@ -51,22 +51,21 @@ class StockMarket {
 
     async updateESTC() {
         const event = this.ESTC.events[Math.floor(Math.random() * this.ESTC.events.length)];
-        const data = await scrapeOPGG();
-        let newBaseValue = 0;
-        data.map((champ) => {
-            if (SHURIMAN_CHAMPS.has(champ.name)) {
-                newBaseValue += champ.winrate;
-            }
-        });
-        if (!this.ESTC.baseValue) {
-            this.ESTC.baseValue = newBaseValue;
-        }
-        const update = event + Math.ceil(15*(newBaseValue - this.ESTC.baseValue));
-        this.ESTC.value = Math.max(this.ESTC.value + update, 0);
+        // const data = await scrapeOPGG();
+        // let newBaseValue = 0;
+        // data.map((champ) => {
+        //     if (SHURIMAN_CHAMPS.has(champ.name)) {
+        //         newBaseValue += champ.winrate;
+        //     }
+        // });
+        // if (!this.ESTC.baseValue) {
+        //     this.ESTC.baseValue = newBaseValue;
+        // }
+        // const update = event + Math.ceil(15*(newBaseValue - this.ESTC.baseValue));
+        this.ESTC.value = Math.max(this.ESTC.value + event, 0);
     }
     async updateTEN() {
         const event = this.TEN.events[Math.floor(Math.random() * this.TEN.events.length)];
-        this.TEN.value = Math.max(this.TEN.value + event, 0);
         const newBaseValue = (await getStockData("TCEHY")).close;
         if (!this.TEN.baseValue) {
             this.TEN.baseValue = newBaseValue;
