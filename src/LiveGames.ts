@@ -89,13 +89,19 @@ export class LiveGame {
       const finishedGame = await getFinishedGame(this.gameId.toString());
       if (finishedGame) {
         // Find result
-        let result = "Loss";
-        result = finishedGame.info.gameDuration <= 5 * 60 ? "Remake" : result;
+        const remake = finishedGame.info.gameDuration <= 5 * 60;
+        let result = "Remake";
 
         // Set Results for each competitor
         for (const participantDTO of finishedGame.info.participants) {
           const matchedParticipant = this.competitors.filter((c) => c.puuid === participantDTO.puuid)[0]
-          matchedParticipant.result = (result === "Remake") ? result : participantDTO.win ? "Win": result;
+
+          if (!matchedParticipant) {
+            console.error(`${participantDTO.puuid} not found`);
+            continue;
+          }
+
+          matchedParticipant.result = (remake) ? "Remake" : participantDTO.win ? "Win": "Loss";
           if (matchedParticipant.discordId) {
             result = matchedParticipant.result;
           }

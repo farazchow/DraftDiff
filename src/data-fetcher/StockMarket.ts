@@ -2,11 +2,12 @@ import { ButtonInteraction, LabelBuilder, MessageFlags, ModalBuilder, ModalSubmi
 import stockModel from "../database/stocks";
 import userModel, { IUser } from "../database/users";
 import { TransferPoints } from "../database/dbFunctions";
-import { scrapeOPGG } from "./scrapeOPGG";
+// import { scrapeOPGG } from "./scrapeOPGG";
 import { getStockData } from "./getStockData";
+import { SendMessage } from "../discord-functions/SendMessage";
 
 const UPDATE_INTERVAL = 60 * 60 * 1000;
-const SHURIMAN_CHAMPS = new Set(["Akshan", "Amumu", "Azir", "K'Sante", "Naafiri", "Nasus", "Rammus", "Renekton", "Sivir", "Taliyah", "Xerath"]);
+// const SHURIMAN_CHAMPS = new Set(["Akshan", "Amumu", "Azir", "K'Sante", "Naafiri", "Nasus", "Rammus", "Renekton", "Sivir", "Taliyah", "Xerath"]);
 
 
 class StockMarket {
@@ -42,7 +43,7 @@ class StockMarket {
 
     constructor() {
         // Check last logged price
-        this.reconstructMarket();
+        this.reconstructMarket(true);
 
         this.intervalID = setInterval(() => {
             this.updateAndLogStocks();
@@ -66,12 +67,17 @@ class StockMarket {
     }
     async updateTEN() {
         const event = this.TEN.events[Math.floor(Math.random() * this.TEN.events.length)];
-        const newBaseValue = (await getStockData("TCEHY")).close;
-        if (!this.TEN.baseValue) {
-            this.TEN.baseValue = newBaseValue;
+        try {
+            const newBaseValue = (await getStockData("TCEHY")).close;
+            if (!this.TEN.baseValue) {
+                this.TEN.baseValue = newBaseValue;
+            }
+            const update = event + Math.ceil(30 * (newBaseValue - this.TEN.baseValue));
+            this.TEN.value = Math.max(this.TEN.value + update, 0);
+        } catch (e) {
+            console.error(e);
+            this.TEN.value = Math.max(this.TEN.value + event, 0);
         }
-        const update = event + Math.ceil(30 * (newBaseValue - this.TEN.baseValue));
-        this.TEN.value = Math.max(this.TEN.value + update, 0);
     }
     async updatePHF() {
         const event = this.PHF.events[Math.floor(Math.random() * this.PHF.events.length)];
@@ -82,13 +88,16 @@ class StockMarket {
         this.MIT.value = Math.max(this.MIT.value + event, 0);
     }
 
-    async reconstructMarket() {
+    async reconstructMarket(updateAfter: boolean = false) {
         const lastLoggedValues = await stockModel.findOne({}, {}, {sort: {time: -1}})
         if (lastLoggedValues) {
             this.ESTC.value = lastLoggedValues.ESTC;
             this.MIT.value = lastLoggedValues.MIT;
             this.TEN.value = lastLoggedValues.TEN;
             this.PHF.value = lastLoggedValues.PHF;
+        }
+        if (updateAfter) {
+            await this.updateAndLogStocks();
         }
     }
 
@@ -104,7 +113,7 @@ class StockMarket {
             MIT: this.MIT.value,
             time: new Date(),
         });
-        console.log("Finished updating and logging");
+        await SendMessage({content: "📈 Stocks Updated! 📉"});
     }
 
     GenerateStockMessage(user: IUser) {
