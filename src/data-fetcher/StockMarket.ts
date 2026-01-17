@@ -5,6 +5,7 @@ import { TransferPoints } from "../database/dbFunctions";
 // import { scrapeOPGG } from "./scrapeOPGG";
 import { getStockData } from "./getStockData";
 import { SendMessage } from "../discord-functions/SendMessage";
+// import { SendMessage } from "../discord-functions/SendMessage";
 
 const UPDATE_INTERVAL = 60 * 60 * 1000;
 // const SHURIMAN_CHAMPS = new Set(["Akshan", "Amumu", "Azir", "K'Sante", "Naafiri", "Nasus", "Rammus", "Renekton", "Sivir", "Taliyah", "Xerath"]);
@@ -64,6 +65,9 @@ class StockMarket {
         // }
         // const update = event + Math.ceil(15*(newBaseValue - this.ESTC.baseValue));
         this.ESTC.value = Math.max(this.ESTC.value + event, 0);
+        if (this.ESTC.value === 0) {
+            await this.Bankrupt(this.ESTC);
+        }
     }
     async updateTEN() {
         const event = this.TEN.events[Math.floor(Math.random() * this.TEN.events.length)];
@@ -78,14 +82,23 @@ class StockMarket {
             console.error(e);
             this.TEN.value = Math.max(this.TEN.value + event, 0);
         }
+        if (this.TEN.value === 0) {
+            await this.Bankrupt(this.TEN);
+        }
     }
     async updatePHF() {
         const event = this.PHF.events[Math.floor(Math.random() * this.PHF.events.length)];
         this.PHF.value = Math.max(this.PHF.value + event, 0);
+        if (this.PHF.value === 0) {
+            await this.Bankrupt(this.PHF);
+        }
     }
     async updateMIT() {
         const event = this.MIT.events[Math.floor(Math.random() * this.MIT.events.length)];
         this.MIT.value = Math.max(this.MIT.value + event, 0);
+        if (this.MIT.value === 0) {
+            await this.Bankrupt(this.MIT);
+        }
     }
 
     async reconstructMarket(updateAfter: boolean = false) {
@@ -113,7 +126,8 @@ class StockMarket {
             MIT: this.MIT.value,
             time: new Date(),
         });
-        await SendMessage({content: "📈 Stocks Updated! 📉"});
+        // await SendMessage({content: "📈 Stocks Updated! 📉"});
+        console.log([this.ESTC.value, this.TEN.value, this.PHF.value, this.MIT.value]);
     }
 
     GenerateStockMessage(user: IUser) {
@@ -126,7 +140,7 @@ class StockMarket {
         const stockEmbed = {
             color: 0x00abff,
             title: 'DraftDiff Stock Market',
-            description: `You currently have **${points} points**.`,
+            description: `You currently have **${points} points**. Stocks are ev 0 and update every ${UPDATE_INTERVAL / 60 / 1000} minutes`,
             fields: [
                 {
                     name: this.ESTC.name,
@@ -338,7 +352,13 @@ class StockMarket {
         user.stocks.set(selectedStock.ticker, alreadyOwnedAmount - sharesAmount);
         await user.save();
         await TransferPoints(undefined, user._id, sharesAmount * selectedStock.value, `Selling ${sharesAmount} shares of ${selectedStock.ticker}`);
-        await interaction.followUp("Succesfully divested!");
+        await interaction.followUp(`Succesfully divested and earned ${sharesAmount * selectedStock.value}!`);
+    }
+
+    // Run when a stock hits 0
+    async Bankrupt(stock: Stock) {
+        await userModel.updateMany({}, {[`stocks.${stock.ticker}`]: 0});
+        await SendMessage({content: `${stock.name} has gone bankrupt! All shares deleted.`});
     }
 }
 

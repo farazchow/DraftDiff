@@ -93,15 +93,18 @@ export class LiveGame {
         let result = "Remake";
 
         // Set Results for each competitor
-        for (const participantDTO of finishedGame.info.participants) {
-          const matchedParticipant = this.competitors.filter((c) => c.puuid === participantDTO.puuid)[0]
+        const finishedGameParticipants = finishedGame.info.participants;
+        for (const participant of this.competitors) {
+          // const matchedParticipant = this.competitors.filter((c) => c.puuid === participantDTO.puuid)[0];
+          const matchedParticipant = finishedGameParticipants.filter((p: { puuid: string; }) => p.puuid === participant.puuid)[0];
 
           if (!matchedParticipant) {
-            console.error(`${participantDTO.puuid} not found`);
+            console.error(`${participant.puuid} not found`);
+            participant.result = "Remake";
             continue;
           }
 
-          matchedParticipant.result = (remake) ? "Remake" : participantDTO.win ? "Win": "Loss";
+          participant.result = (remake) ? "Remake" : matchedParticipant.win ? "Win": "Loss";
           if (matchedParticipant.discordId) {
             result = matchedParticipant.result;
           }
