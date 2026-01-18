@@ -95,7 +95,6 @@ export class LiveGame {
         // Set Results for each competitor
         const finishedGameParticipants = finishedGame.info.participants;
         for (const participant of this.competitors) {
-          // const matchedParticipant = this.competitors.filter((c) => c.puuid === participantDTO.puuid)[0];
           const matchedParticipant = finishedGameParticipants.filter((p: { puuid: string; }) => p.puuid === participant.puuid)[0];
 
           if (!matchedParticipant) {
@@ -105,8 +104,8 @@ export class LiveGame {
           }
 
           participant.result = (remake) ? "Remake" : matchedParticipant.win ? "Win": "Loss";
-          if (matchedParticipant.discordId) {
-            result = matchedParticipant.result;
+          if (participant.discordId) {
+            result = participant.result;
           }
         }
 
