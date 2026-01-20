@@ -82,7 +82,7 @@ export async function execute(interaction: CommandInteraction) {
     accumulatedPoint -= bonusEarned;
     // lossCounter = 0;
     await interaction.editReply(
-      `Congrats ${userMention(interaction.user.id)}! You won ${amountEarned} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a bonus of **0 points**.`
+      `Congrats ${userMention(interaction.user.id)}! You won ${amountEarned} point(s)! Coinflip is next available at <t:${Math.floor(timestamp.getTime()/1000)}:f> with a bonus of **${accumulatedPoint} points**.`
     );
   } else {
     TransferPoints(userID, undefined, amount, "Lost the coinflip!");
