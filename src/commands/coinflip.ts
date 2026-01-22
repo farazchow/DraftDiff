@@ -11,7 +11,7 @@ const COOLDOWN_TIME = 15 * 60 * 1000;
 let cooldown = false;
 let timestamp = new Date();
 // let lossCounter = 0;
-let accumulatedPoint = 0;
+let accumulatedPoint = 102229;
 const ACCUMULATION_RATIO = .5;
 
 export const data = new SlashCommandBuilder()

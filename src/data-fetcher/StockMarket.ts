@@ -52,6 +52,7 @@ class StockMarket {
     }
 
     async updateESTC() {
+        const wasBankrupt = this.ESTC.value === 0;
         const event = this.ESTC.events[Math.floor(Math.random() * this.ESTC.events.length)];
         // const data = await scrapeOPGG();
         // let newBaseValue = 0;
@@ -65,38 +66,42 @@ class StockMarket {
         // }
         // const update = event + Math.ceil(15*(newBaseValue - this.ESTC.baseValue));
         this.ESTC.value = Math.max(this.ESTC.value + event, 0);
-        if (this.ESTC.value === 0) {
+        if (this.ESTC.value === 0 && !wasBankrupt) {
             await this.Bankrupt(this.ESTC);
         }
     }
     async updateTEN() {
+        const wasBankrupt = this.TEN.value === 0;
         const event = this.TEN.events[Math.floor(Math.random() * this.TEN.events.length)];
         try {
             const newBaseValue = (await getStockData("TCEHY")).close;
             if (!this.TEN.baseValue) {
                 this.TEN.baseValue = newBaseValue;
             }
-            const update = event + Math.ceil(30 * (newBaseValue - this.TEN.baseValue));
+            const update = event + Math.ceil(20 * (newBaseValue - this.TEN.baseValue));
             this.TEN.value = Math.max(this.TEN.value + update, 0);
+            this.TEN.baseValue = newBaseValue;
         } catch (e) {
             console.error(e);
             this.TEN.value = Math.max(this.TEN.value + event, 0);
         }
-        if (this.TEN.value === 0) {
+        if (this.TEN.value === 0 && !wasBankrupt) {
             await this.Bankrupt(this.TEN);
         }
     }
     async updatePHF() {
         const event = this.PHF.events[Math.floor(Math.random() * this.PHF.events.length)];
+        const wasBankrupt = this.PHF.value === 0;
         this.PHF.value = Math.max(this.PHF.value + event, 0);
-        if (this.PHF.value === 0) {
+        if (this.PHF.value === 0 && !wasBankrupt) {
             await this.Bankrupt(this.PHF);
         }
     }
     async updateMIT() {
+        const wasBankrupt = this.MIT.value === 0;
         const event = this.MIT.events[Math.floor(Math.random() * this.MIT.events.length)];
         this.MIT.value = Math.max(this.MIT.value + event, 0);
-        if (this.MIT.value === 0) {
+        if (this.MIT.value === 0 && !wasBankrupt) {
             await this.Bankrupt(this.MIT);
         }
     }
@@ -127,7 +132,7 @@ class StockMarket {
             time: new Date(),
         });
         // await SendMessage({content: "📈 Stocks Updated! 📉"});
-        console.log([this.ESTC.value, this.TEN.value, this.PHF.value, this.MIT.value]);
+        // console.log([this.ESTC.value, this.TEN.value, this.PHF.value, this.MIT.value]);
     }
 
     GenerateStockMessage(user: IUser) {
